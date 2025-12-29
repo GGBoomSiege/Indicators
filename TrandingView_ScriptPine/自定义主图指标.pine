@@ -106,8 +106,8 @@ channel3 = XSTunnel_Channel3_Active ? DD * (1 + M / 100) : na
 channel4 = XSTunnel_Channel4_Active ? DD * (1 - M / 100) : na
 
 // 绘制线条（已经结合总开关）
-pChannel1 = plot(XSTunnel_Active and XSTunnel_Channel1_Active ? channel1 : na, title="Long Upper (Resistance)", color=color.gray, linewidth=1)
-pChannel2 = plot(XSTunnel_Active and XSTunnel_Channel2_Active ? channel2 : na, title="Long Lower (Support)", color=color.green, linewidth=1)
+pChannel1 = plot(XSTunnel_Active and XSTunnel_Channel1_Active ? channel1 : na, title="Long Upper (Resistance)", color=color.gray, linewidth=2)
+pChannel2 = plot(XSTunnel_Active and XSTunnel_Channel2_Active ? channel2 : na, title="Long Lower (Support)", color=color.green, linewidth=2)
 pChannel3 = plot(XSTunnel_Active and XSTunnel_Channel3_Active ? channel3 : na, title="Short Upper (Resistance)", color=color.red, linewidth=2)
 pChannel4 = plot(XSTunnel_Active and XSTunnel_Channel4_Active ? channel4 : na, title="Short Lower (Support)", color=color.blue, linewidth=2)
 
