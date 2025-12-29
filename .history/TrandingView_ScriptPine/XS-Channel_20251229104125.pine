@@ -1,0 +1,37 @@
+//@version=5
+indicator("Xue's Channel 2 (XS2) - Classic Version", shorttitle="XS Channel 2", overlay=true)
+
+// Input parameters (common defaults from classic formulas)
+N = input.int(102, title="Long Channel Multiplier N (80-120, default 102)", minval=1)
+M = input.float(7, title="Short Channel Multiplier M % (2-20, default 7)", minval=0.1)
+
+// Long-term channel base: 5-period SMA of typical price
+typicalPrice = (2 * close + high + low) / 4
+AA = ta.sma(typicalPrice, 5)
+
+// Long-term channels (outer/wider, often red/blue)
+channel1 = AA * N / 100          // Upper long-term (resistance)
+channel2 = AA * (200 - N) / 100  // Lower long-term (support)
+
+// Short-term channel volatility factor
+shortTypical = (2 * close + high + low) / 4
+ma20Close = ta.sma(close, 20)
+CC = math.abs(shortTypical - ma20Close) / ma20Close
+
+// Dynamic Moving Average (DMA): recursive AMA approximation
+var float DD = na
+DD := CC * close + (1 - CC) * (nz(DD[1], close))  // Handles na for first bars
+
+// Short-term channels (inner/narrower, often yellow/white)
+channel3 = DD * (1 + M / 100)    // Upper short-term
+channel4 = DD * (1 - M / 100)    // Lower short-term
+
+// Plot lines and capture IDs
+pChannel1 = plot(channel1, title="Long Upper (Resistance)", color=color.gray,    linewidth=2)
+pChannel2 = plot(channel2, title="Long Lower (Support)",    color=color.green,   linewidth=2)
+pChannel3 = plot(channel3, title="Short Upper (Resistance)",color=color.red, linewidth=1)
+pChannel4 = plot(channel4, title="Short Lower (Support)",   color=color.blue,  linewidth=1)
+
+// Fill areas for visualization
+fill(pChannel1, pChannel2, color=color.new(color.purple, 90), title="Long-term Channel Fill")
+fill(pChannel3, pChannel4, color=color.new(color.orange, 85), title="Short-term Channel Fill")

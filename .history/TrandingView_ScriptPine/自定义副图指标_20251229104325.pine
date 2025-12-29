@@ -1,0 +1,114 @@
+//@version=5
+indicator("顶底先机 + QQE MOD (0-Axis Resonance) v3", overlay=false)
+
+//==================================================
+// 一、同花顺 SMA(x,n,1)
+//==================================================
+sma_ths(x, n) =>
+    var float out = na
+    out := na(out[1]) ? x : (x + (n - 1) * out[1]) / n
+    out
+
+//==================================================
+// 二、同花顺指标（0轴化）
+//==================================================
+length_ths = 36
+
+var1 = (close - ta.lowest(low, length_ths)) / (ta.highest(high, length_ths) - ta.lowest(low, length_ths)) * 100
+var2 = sma_ths(var1, 3)
+var3 = sma_ths(var2, 3)   // 波
+var4 = sma_ths(var3, 3)   // 段
+
+// 0轴映射
+ths_wave = var3 - 50
+ths_seg  = var4 - 50
+
+plot(ths_wave, title="THS Wave (0)", color=color.blue, linewidth=2)
+plot(ths_seg,  title="THS Segment (0)", color=color.orange, linewidth=2)
+
+//==================================================
+// 三、抄底 / 逃顶信号
+//==================================================
+bottomSignal = ta.crossover(ths_wave, ths_seg) and ths_wave < -20
+topSignal    = ta.crossunder(ths_wave, ths_seg) and ths_wave > 20
+
+if bottomSignal
+    label.new(bar_index, -35, "抄底", style=label.style_label_up, color=color.green, textcolor=color.white, size=size.small)
+
+if topSignal
+    label.new(bar_index, 35, "逃顶", style=label.style_label_down, color=color.red, textcolor=color.white, size=size.small)
+
+//==================================================
+// 四、QQE MOD 参数
+//==================================================
+rsiLengthPrimary      = input.int(6, "Primary RSI Length")
+rsiSmoothingPrimary   = input.int(5, "Primary RSI Smoothing")
+qqeFactorPrimary      = input.float(3.0, "Primary QQE Factor")
+thresholdPrimary      = input.float(3.0, "Primary Threshold")
+
+rsiLengthSecondary    = input.int(6, "Secondary RSI Length")
+rsiSmoothingSecondary = input.int(5, "Secondary RSI Smoothing")
+qqeFactorSecondary    = input.float(1.61, "Secondary QQE Factor")
+thresholdSecondary    = input.float(3.0, "Secondary Threshold")
+
+bollingerLength       = input.int(50, "BB Length")
+bollingerMultiplier   = input.float(0.35, "BB Multiplier")
+
+//==================================================
+// 五、QQE 核心函数
+//==================================================
+calculateQQE(rsiLength, smoothingFactor, qqeFactor, src) =>
+    wildersLength = rsiLength * 2 - 1
+    rsi = ta.rsi(src, rsiLength)
+    smoothedRsi = ta.ema(rsi, smoothingFactor)
+    atrRsi = math.abs(smoothedRsi - smoothedRsi[1])
+    smoothedAtrRsi = ta.ema(atrRsi, wildersLength)
+    dynamicAtrRsi = smoothedAtrRsi * qqeFactor
+
+    var float longBand = na
+    var float shortBand = na
+    var int trend = 0
+
+    newLong  = smoothedRsi - dynamicAtrRsi
+    newShort = smoothedRsi + dynamicAtrRsi
+
+    longBand  := smoothedRsi[1] > longBand[1] and smoothedRsi > longBand[1] ? math.max(longBand[1], newLong) : newLong
+    shortBand := smoothedRsi[1] < shortBand[1] and smoothedRsi < shortBand[1] ? math.min(shortBand[1], newShort) : newShort
+
+    trend := ta.crossover(smoothedRsi, shortBand[1]) ? 1 : ta.crossunder(smoothedRsi, longBand[1]) ? -1 : trend[1]
+
+    qqeLine = trend == 1 ? longBand : shortBand
+    [qqeLine, smoothedRsi]
+
+//==================================================
+// 六、QQE 计算
+//==================================================
+[primaryQQE, primaryRSI]    = calculateQQE(rsiLengthPrimary, rsiSmoothingPrimary, qqeFactorPrimary, close)
+[secondaryQQE, secondaryRSI] = calculateQQE(rsiLengthSecondary, rsiSmoothingSecondary, qqeFactorSecondary, close)
+
+// Bollinger（基于 Primary QQE，0轴化）
+bbBasis = ta.sma(primaryQQE - 50, bollingerLength)
+bbDev   = bollingerMultiplier * ta.stdev(primaryQQE - 50, bollingerLength)
+bbUpper = bbBasis + bbDev
+bbLower = bbBasis - bbDev
+
+//==================================================
+// 七、QQE 能量柱（严格按原逻辑）
+//==================================================
+// 蓝红柱条件
+qqeUp = secondaryRSI - 50 > thresholdSecondary and primaryRSI - 50 > bbUpper
+qqeDown = secondaryRSI - 50 < -thresholdSecondary and primaryRSI - 50 < bbLower
+
+// 绘制蓝红柱
+plot(qqeUp ? secondaryRSI - 50 : na, title="QQE Up", style=plot.style_columns, color=color.new(#00c3ff, 0))
+plot(qqeDown ? secondaryRSI - 50 : na, title="QQE Down", style=plot.style_columns, color=color.new(#ff0062, 0))
+
+// 灰色基础柱，只在不满足蓝红柱条件时显示
+plot(not qqeUp and not qqeDown ? secondaryRSI - 50 : na, title="QQE Base", style=plot.style_columns, color=color.new(color.gray, 30))
+
+//==================================================
+// 八、参考线
+//==================================================
+hline(0, "Zero Axis", color=color.gray)
+hline(30, "+30", color=color.new(color.red, 70), linestyle=hline.style_solid, linewidth=2)
+hline(-30, "-30", color=color.new(color.green, 70), linestyle=hline.style_solid, linewidth=2)

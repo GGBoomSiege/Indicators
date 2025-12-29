@@ -1,0 +1,29 @@
+{ ===== 参数 ===== }
+N:=102;
+M:=7;
+
+{ ===== 典型价格 ===== }
+TP:=(2*CLOSE+HIGH+LOW)/4;
+
+{ ===== 长通道 ===== }
+AA:=MA(TP,5);
+LONG_UP:AA*N/100;
+LONG_DN:AA*(200-N)/100;
+
+{ ===== 波动因子 ===== }
+MA20:=MA(CLOSE,20);
+CC:=ABS(TP-MA20)/MA20;
+
+{ ===== 用 EMA 近似 DD ===== }
+ALPHA:=MA(CC,5);          { 平滑后的自适应因子 }
+DD:=EMA(CLOSE,ALPHA*10);  { 放大系数可调 8~15 }
+
+{ ===== 短通道 ===== }
+SHORT_UP:DD*(1+M/100);
+SHORT_DN:DD*(1-M/100);
+
+{ ===== 绘图 ===== }
+LONG_UP,COLORRED,LINETHICK2;
+LONG_DN,COLORBLUE,LINETHICK2;
+SHORT_UP,COLORYELLOW,LINETHICK1;
+SHORT_DN,COLORWHITE,LINETHICK1;

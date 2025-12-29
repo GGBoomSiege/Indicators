@@ -1,0 +1,117 @@
+//@version=5
+indicator(title="Victorinox by Illupute v2", overlay=true)
+
+// ==============================
+// 一、基础设置
+// ==============================
+avr = (high+low)/2
+var indicator_parameters_Base="基础设置"
+src = input(close, title="Source",inline = "l1", group = indicator_parameters_Base)
+BBI_Active = input.bool(true, title="显示BBI",inline = "l2", group = indicator_parameters_Base)
+EMA_Active = input.bool(true, title="显示EMA",inline = "l2", group = indicator_parameters_Base)
+Vegas_Active  = input.bool(defval = true, title = "显示Vegas通道",inline = "l4", group = indicator_parameters_Base)
+XSTunnel_Active = input.bool(true, title="显示XS Tunnel", inline="l5", group=indicator_parameters_Base)  // 新增开关
+
+// ==============================
+// 二、BBI 设置
+// ==============================
+var indicator_parameters_BBI="BBI 设置"
+BBI_M1=input.int(3,minval=1,title="N1",inline = "l1", group = indicator_parameters_BBI)
+BBI_M2=input.int(6,minval=1,title="N2",inline = "l1", group = indicator_parameters_BBI)
+BBI_M3=input.int(12,minval=1,title="N3",inline = "l2", group = indicator_parameters_BBI)
+BBI_M4=input.int(24,minval=1,title="N4",inline = "l2", group = indicator_parameters_BBI)
+BBI_Color_Long  = input.color(color.green, "Long",inline = "l2", group = indicator_parameters_BBI)
+BBI_Color_Short  = input.color(color.orange, "Short",inline = "l2", group = indicator_parameters_BBI)
+
+// BBI ema remix ma -----
+M1 = ta.ema(src, BBI_M1)
+M2 = (ta.sma(src, BBI_M2)*1.5+ta.ema(src, BBI_M2)*0.5)/2
+M3 = (ta.sma(src, BBI_M3)*0.5+ta.ema(src, BBI_M3)*1.5)/2
+M4 = ta.sma(src, BBI_M4)
+
+BBI_fix = (M1+ M2 + M3 + M4) / 4
+plot(BBI_Active?BBI_fix:na,"BBI", color=(BBI_fix<=close?BBI_Color_Long:BBI_Color_Short), linewidth=2)
+
+// ==============================
+// 三、EMA 设置
+// ==============================
+var indicator_parameters_EMA="EMA 设置"
+EMA_L1=input.int(5,minval=1,title="L1",inline = "l1", group = indicator_parameters_EMA)
+EMA_L1_Active   = input.bool(true, "",   inline = "l1",group = indicator_parameters_EMA)
+EMA_L2=input.int(20,minval=1,title="L2",inline = "l1", group = indicator_parameters_EMA)
+EMA_L2_Active   = input.bool(true, "",   inline = "l1",group = indicator_parameters_EMA)
+EMA_L3=input.int(60,minval=1,title="L3",inline = "l2", group = indicator_parameters_EMA)
+EMA_L3_Active   = input.bool(true, "",   inline = "l2",group = indicator_parameters_EMA)
+EMA_L4=input.int(120,minval=1,title="L4",inline = "l2", group = indicator_parameters_EMA)
+EMA_L4_Active   = input.bool(true, "",   inline = "l2",group = indicator_parameters_EMA)
+
+EMA_L1_Color  = input.color(color.red, "L1",inline = "l3", group = indicator_parameters_EMA)
+EMA_L2_Color  = input.color(color.yellow, "L2",inline = "l3", group = indicator_parameters_EMA)
+EMA_L3_Color  = input.color(color.green, "L3",inline = "l3", group = indicator_parameters_EMA)
+EMA_L4_Color  = input.color(color.blue, "L4",inline = "l3", group = indicator_parameters_EMA)
+
+plot(EMA_Active?(EMA_L1_Active?ta.ema(src, EMA_L1):na):na, color=EMA_L1_Color, linewidth=1)
+plot(EMA_Active?(EMA_L2_Active?ta.ema(src, EMA_L2):na):na, color=EMA_L2_Color, linewidth=1)
+plot(EMA_Active?(EMA_L3_Active?ta.ema(src, EMA_L3):na):na, color=EMA_L3_Color, linewidth=1)
+plot(EMA_Active?(EMA_L4_Active?ta.ema(src, EMA_L4):na):na, color=EMA_L4_Color, linewidth=1)
+
+// ==============================
+// 四、Vegas 设置
+// ==============================
+var indicator_parameters_Vegas="Vegas 设置"
+
+Vegas_F_Color  = input.color(color.orange, "12均线",inline = "l1", group = indicator_parameters_Vegas)
+Vegas_L1_Color  = input.color(color.rgb(98, 0, 255), "144-169通道",inline = "l1", group = indicator_parameters_Vegas)
+Vegas_L2_Color  = input.color(color.blue, "576-676",inline = "l1", group = indicator_parameters_Vegas)
+
+plot(Vegas_Active?ta.ema(src, 10):na, color=Vegas_F_Color, linewidth=1)
+plot(Vegas_Active?ta.ema(src, 144):na, color=Vegas_L1_Color, linewidth=2)
+plot(Vegas_Active?ta.ema(src, 169):na, color=Vegas_L1_Color, linewidth=2)
+plot(Vegas_Active?ta.ema(src, 576):na, color=Vegas_L2_Color, linewidth=2)
+plot(Vegas_Active?ta.ema(src, 676):na, color=Vegas_L2_Color, linewidth=2)
+
+// ==============================
+// 五、XS Tunnel 设置（可开关）
+// ==============================
+var indicator_parameters_XS = "XS Tunnel 设置"
+
+XSTunnel_Channel1_Active = input.bool(true, "显示 Long Upper (Resistance)", group=indicator_parameters_XS)
+XSTunnel_Channel2_Active = input.bool(true, "显示 Long Lower (Support)", group=indicator_parameters_XS)
+XSTunnel_Channel3_Active = input.bool(true, "显示 Short Upper (Resistance)", group=indicator_parameters_XS)
+XSTunnel_Channel4_Active = input.bool(true, "显示 Short Lower (Support)", group=indicator_parameters_XS)
+
+XSTunnel_Fill_Long_Active  = input.bool(true, "显示 Long 通道填充", group=indicator_parameters_XS)
+XSTunnel_Fill_Short_Active = input.bool(true, "显示 Short 通道填充", group=indicator_parameters_XS)
+// 输入参数
+N = input.int(102, title="Long Channel Multiplier N (80-120, default 102)", minval=1)
+M = input.float(7, title="Short Channel Multiplier M % (2-20, default 7)", minval=0.1)
+
+// 长周期通道基准
+typicalPrice = (2 * close + high + low) / 4
+AA = ta.sma(typicalPrice, 5)
+
+// 长周期通道
+channel1 = XSTunnel_Channel1_Active ? AA * N / 100 : na
+channel2 = XSTunnel_Channel2_Active ? AA * (200 - N) / 100 : na
+
+// 短周期通道
+shortTypical = (2 * close + high + low) / 4
+ma20Close = ta.sma(close, 20)
+CC = math.abs(shortTypical - ma20Close) / ma20Close
+
+var float DD = na
+DD := CC * close + (1 - CC) * nz(DD[1], close)
+
+channel3 = XSTunnel_Channel3_Active ? DD * (1 + M / 100) : na
+channel4 = XSTunnel_Channel4_Active ? DD * (1 - M / 100) : na
+
+// 绘制线条（已经结合总开关）
+pChannel1 = plot(XSTunnel_Active and XSTunnel_Channel1_Active ? channel1 : na, title="Long Upper (Resistance)", color=color.gray, linewidth=1)
+pChannel2 = plot(XSTunnel_Active and XSTunnel_Channel2_Active ? channel2 : na, title="Long Lower (Support)", color=color.green, linewidth=1)
+pChannel3 = plot(XSTunnel_Active and XSTunnel_Channel3_Active ? channel3 : na, title="Short Upper (Resistance)", color=color.red, linewidth=2)
+pChannel4 = plot(XSTunnel_Active and XSTunnel_Channel4_Active ? channel4 : na, title="Short Lower (Support)", color=color.blue, linewidth=2)
+
+// 绘制填充区域（只用填充开关即可）
+fill(pChannel1, pChannel2, color=XSTunnel_Active and XSTunnel_Fill_Long_Active ? color.new(color.purple, 90) : na, title="Long-term Channel Fill")
+fill(pChannel3, pChannel4, color=XSTunnel_Active and XSTunnel_Fill_Short_Active ? color.new(color.orange, 85) : na, title="Short-term Channel Fill")
+

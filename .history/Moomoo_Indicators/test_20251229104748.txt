@@ -1,0 +1,29 @@
+{参数定义}
+PARAM(N,1,999,102,"Long Channel Multiplier N (80-120, default 102)");
+PARAM(M,0.1,999,7,"Short Channel Multiplier M % (2-20, default 7)");
+
+{计算典型价格和长期通道基线}
+TYPICAL_PRICE:=(2*CLOSE+HIGH+LOW)/4;
+AA:=MA(TYPICAL_PRICE,5);
+
+{长期通道（外侧）}
+CHANNEL1:=AA*N/100;  {上轨，阻力}
+CHANNEL2:=AA*(200-N)/100;  {下轨，支撑}
+
+{短期通道波动率}
+SHORT_TYPICAL:=(2*CLOSE+HIGH+LOW)/4;
+MA20_CLOSE:=MA(CLOSE,20);
+CC:=ABS(SHORT_TYPICAL-MA20_CLOSE)/MA20_CLOSE;
+
+{动态移动平均DD（递归计算，从第一个bar起逐步逼近）}
+DD:CC*CLOSE + (1-CC)*REF(DD,1);
+
+{短期通道（内侧）}
+CHANNEL3:=DD*(1+M/100);  {上轨，阻力}
+CHANNEL4:=DD*(1-M/100);  {下轨，支撑}
+
+{输出通道线，可在富途牛牛中设置颜色和线宽}
+CHANNEL1,COLORGRAY,LINETHICK2;  {长期上轨，灰色，粗线}
+CHANNEL2,COLORGREEN,LINETHICK2;  {长期下轨，绿色，粗线}
+CHANNEL3,COLORRED,LINETHICK1;  {短期上轨，红色，细线}
+CHANNEL4,COLORBLUE,LINETHICK1;  {短期下轨，蓝色，细线}
