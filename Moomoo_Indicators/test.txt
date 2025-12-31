@@ -1,39 +1,121 @@
-N:102,1,200;
-M:7,1,50;
+//@version=5
+indicator(title="Victorinox by Illupute v2", overlay=true)
 
-{------------------------------------
-  1. 典型价格 & 长期通道基线
-------------------------------------}
-TYPICAL_PRICE := (2*CLOSE + HIGH + LOW) / 4;
-AA := MA(TYPICAL_PRICE, 5);
+// ==============================
+// 一、基础设置
+// ==============================
+ZigZag_Main_Active = input.bool(defval = true, title = "显示曲折",inline = "l3", group = indicator_parameters_Base)
+ZigZag_Fibo_Active = input.bool(defval = true, title = "显示斐波",inline = "l3", group = indicator_parameters_Base)
 
-{------------------------------------
-  2. 长期通道（外侧）
-------------------------------------}
-CHANNEL1 := AA * N / 100;
-CHANNEL2 := AA * (200 - N) / 100;
+// ZigZag -----
+var indicator_parameters_ZigZag="Zig Zag设置"
+ZigZag_Period = input.int(defval = 34, title="周期", minval = 2, maxval = 55,inline = "l1", group = indicator_parameters_ZigZag)
+ZigZag_Label_Location = input.string(defval = "Right", title = "标签位置", options = ["Left", "Right"],inline = "l1", group = indicator_parameters_ZigZag)
 
-{------------------------------------
-  3. 短期通道波动率
-------------------------------------}
-MA20_CLOSE := MA(CLOSE, 20);
-CC := ABS(TYPICAL_PRICE - MA20_CLOSE) / MA20_CLOSE;
+ZigZag_U_Color = input.color(defval = color.lime, title = "曲折颜色",inline = "l2", group = indicator_parameters_ZigZag)
+ZigZag_L_Color = input.color(defval = color.red, title = "",inline = "l2", group = indicator_parameters_ZigZag)
 
-{------------------------------------
-  4. 动态移动平均 DD（富途合法写法）
-------------------------------------}
-DD := IF(BARPOS = 1, CLOSE, CC * CLOSE + (1 - CC) * REF(DD,1));
 
-{------------------------------------
-  5. 短期通道（内侧）
-------------------------------------}
-CHANNEL3 := DD * (1 + M / 100);
-CHANNEL4 := DD * (1 - M / 100);
+ZigZag_Fibo_Label_Color = input.color(defval = color.blue, title = "斐波颜色",inline = "l2", group = indicator_parameters_ZigZag)
+ZigZag_Fibo_Line_Color = input.color(defval = color.lime, title = "",inline = "l2", group = indicator_parameters_ZigZag)
 
-{------------------------------------
-  6. 输出
-------------------------------------}
-CHANNEL1:CHANNEL1,COLOR808080,LINETHICK2;
-CHANNEL2:CHANNEL2,COLOR00FF00,LINETHICK2;
-CHANNEL3:CHANNEL3,COLORFF0000,LINETHICK1;
-CHANNEL4:CHANNEL4,COLOR0000FF,LINETHICK1;
+ZigZag_236_Active = input.bool(defval = true, title = "236",inline = "l3", group = indicator_parameters_ZigZag)
+ZigZag_382_Active = input.bool(defval = true, title = "382",inline = "l3", group = indicator_parameters_ZigZag)
+ZigZag_500_Active = input.bool(defval = true, title = "500",inline = "l3", group = indicator_parameters_ZigZag)
+ZigZag_618_Active = input.bool(defval = true, title = "618",inline = "l3", group = indicator_parameters_ZigZag)
+ZigZag_786_Active = input.bool(defval = true, title = "786",inline = "l3", group = indicator_parameters_ZigZag)
+
+var ZigZag_Fibo_Ratios = array.new_float(0)
+var ZigZag_Shown_Levels = 1
+if barstate.isfirst
+    array.push(ZigZag_Fibo_Ratios, 0.000)
+    if ZigZag_236_Active
+        array.push(ZigZag_Fibo_Ratios, 0.236)
+        ZigZag_Shown_Levels := ZigZag_Shown_Levels + 1
+    if ZigZag_382_Active
+        array.push(ZigZag_Fibo_Ratios, 0.382)
+        ZigZag_Shown_Levels := ZigZag_Shown_Levels + 1
+    if ZigZag_500_Active
+        array.push(ZigZag_Fibo_Ratios, 0.500)
+        ZigZag_Shown_Levels := ZigZag_Shown_Levels + 1
+    if ZigZag_618_Active
+        array.push(ZigZag_Fibo_Ratios, 0.618)
+        ZigZag_Shown_Levels := ZigZag_Shown_Levels + 1
+    if ZigZag_786_Active
+        array.push(ZigZag_Fibo_Ratios, 0.786)
+        ZigZag_Shown_Levels := ZigZag_Shown_Levels + 1
+    for x = 1 to 5
+        array.push(ZigZag_Fibo_Ratios, x)
+        array.push(ZigZag_Fibo_Ratios, x + 0.272)
+        array.push(ZigZag_Fibo_Ratios, x + 0.414)
+        array.push(ZigZag_Fibo_Ratios, x + 0.618)
+
+float ZigZag_Period_High = ta.highestbars(high, ZigZag_Period) == 0 ? high : na
+float ZigZag_Period_Low = ta.lowestbars(low, ZigZag_Period) == 0 ? low : na
+var ZigZag_Direction = 0
+ZigZag_Direction := ZigZag_Period_High and na(ZigZag_Period_Low)?1:(ZigZag_Period_Low and na(ZigZag_Period_High)?-1:ZigZag_Direction)
+var ZigZag_Max_Array_Size = 10
+var ZigZag_Array = array.new_float(0)
+ZigZag_Array_Old = array.copy(ZigZag_Array)
+
+ZigZag_Add(value, bindex)=>
+    array.unshift(ZigZag_Array, bindex)
+    array.unshift(ZigZag_Array, value)
+    if array.size(ZigZag_Array) > ZigZag_Max_Array_Size
+        array.pop(ZigZag_Array)
+        array.pop(ZigZag_Array)
+    
+ZigZag_Update(value, bindex)=>
+    if array.size(ZigZag_Array) == 0
+        ZigZag_Add(value, bindex)
+    else
+        if (ZigZag_Direction == 1 and value > array.get(ZigZag_Array, 0)) or (ZigZag_Direction == -1 and value < array.get(ZigZag_Array, 0))
+            array.set(ZigZag_Array, 0, value)
+            array.set(ZigZag_Array, 1, bindex)
+        0.
+
+bool ZigZag_Direction_Changed = (ZigZag_Direction != ZigZag_Direction[1])
+if ZigZag_Period_High or ZigZag_Period_Low
+    if ZigZag_Direction_Changed
+        ZigZag_Add(ZigZag_Direction == 1 ? ZigZag_Period_High : ZigZag_Period_Low, bar_index)
+    else
+        ZigZag_Update(ZigZag_Direction == 1 ? ZigZag_Period_High : ZigZag_Period_Low, bar_index)
+
+if ZigZag_Main_Active and array.size(ZigZag_Array) >= 4 and array.size(ZigZag_Array_Old) >= 4
+    var line ZigZag_Line = na
+    if array.get(ZigZag_Array, 0) != array.get(ZigZag_Array_Old, 0) or array.get(ZigZag_Array, 1) != array.get(ZigZag_Array_Old, 1)
+        if array.get(ZigZag_Array, 2) == array.get(ZigZag_Array_Old, 2) and array.get(ZigZag_Array, 3) == math.round(array.get(ZigZag_Array_Old, 3))
+            line.delete(ZigZag_Line)
+        ZigZag_Line := line.new(x1 = math.round(array.get(ZigZag_Array, 1)), y1 = array.get(ZigZag_Array, 0), x2 = math.round(array.get(ZigZag_Array, 3)), y2 = array.get(ZigZag_Array, 2), color = ZigZag_Direction == 1 ? ZigZag_U_Color : ZigZag_L_Color, width = 2)
+
+var ZigZag_Fibo_Lines = array.new_line(0)
+var ZigZag_Fibo_Lables = array.new_label(0)
+if ZigZag_Fibo_Active and array.size(ZigZag_Array) >= 6 and barstate.islast
+    if array.size(ZigZag_Fibo_Lines) > 0
+        for x = 0 to array.size(ZigZag_Fibo_Lines) - 1
+            line.delete(array.get(ZigZag_Fibo_Lines, x))
+            label.delete(array.get(ZigZag_Fibo_Lables, x))
+            
+    ZigZag_Diff = array.get(ZigZag_Array, 4) - array.get(ZigZag_Array, 2)
+    ZigZag_Stopit = false
+    for x = 0 to array.size(ZigZag_Fibo_Ratios) - 1
+        if ZigZag_Stopit and x > ZigZag_Shown_Levels
+            break
+        array.unshift(ZigZag_Fibo_Lines, 
+                      line.new(x1 = math.round(array.get(ZigZag_Array, 5)), 
+                               y1 = array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x), 
+                               x2 = bar_index, 
+                               y2 = array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x), 
+                               color = ZigZag_Fibo_Line_Color,
+                               width = 2,
+                               extend = extend.right))
+        label_x_loc = ZigZag_Label_Location == "Left" ? math.round(array.get(ZigZag_Array, 5)) - 1 : bar_index + 15
+        array.unshift(ZigZag_Fibo_Lables, 
+                      label.new( x = label_x_loc, 
+                                 y = array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x), 
+                                 text = str.tostring(array.get(ZigZag_Fibo_Ratios, x), '#.###') + "(" + str.tostring(math.round_to_mintick(array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x))) + ")", 
+                                 textcolor = ZigZag_Fibo_Label_Color, 
+                                 style = label.style_none))
+        if (ZigZag_Direction == 1 and array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x) > array.get(ZigZag_Array, 0)) or
+           (ZigZag_Direction == -1 and array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x) < array.get(ZigZag_Array, 0))
+            ZigZag_Stopit := true

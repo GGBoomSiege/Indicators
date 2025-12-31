@@ -7,10 +7,12 @@ indicator(title="Victorinox by Illupute v2", overlay=true)
 avr = (high+low)/2
 var indicator_parameters_Base="基础设置"
 src = input(close, title="Source",inline = "l1", group = indicator_parameters_Base)
-BBI_Active = input.bool(true, title="显示BBI",inline = "l2", group = indicator_parameters_Base)
-EMA_Active = input.bool(true, title="显示EMA",inline = "l2", group = indicator_parameters_Base)
+BBI_Active = input.bool(false, title="显示BBI",inline = "l2", group = indicator_parameters_Base)
+EMA_Active = input.bool(false, title="显示EMA",inline = "l2", group = indicator_parameters_Base)
 Vegas_Active  = input.bool(defval = true, title = "显示Vegas通道",inline = "l4", group = indicator_parameters_Base)
 XSTunnel_Active = input.bool(true, title="显示XS Tunnel", inline="l5", group=indicator_parameters_Base)  // 新增开关
+ZigZag_Main_Active = input.bool(defval = true, title = "显示曲折",inline = "l3", group = indicator_parameters_Base)
+ZigZag_Fibo_Active = input.bool(defval = true, title = "显示斐波",inline = "l3", group = indicator_parameters_Base)
 
 // ==============================
 // 二、BBI 设置
@@ -60,28 +62,31 @@ plot(EMA_Active?(EMA_L4_Active?ta.ema(src, EMA_L4):na):na, color=EMA_L4_Color, l
 // ==============================
 var indicator_parameters_Vegas="Vegas 设置"
 
-Vegas_F_Color  = input.color(color.orange, "12均线",inline = "l1", group = indicator_parameters_Vegas)
+Vegas_F_Color  = input.color(color.orange, "10均线",inline = "l1", group = indicator_parameters_Vegas)
+Vegas_F_Active   = input.bool(true, "",   inline = "l1",group = indicator_parameters_Vegas)
 Vegas_L1_Color  = input.color(color.rgb(98, 0, 255), "144-169通道",inline = "l1", group = indicator_parameters_Vegas)
+Vegas_L1_Active   = input.bool(true, "",   inline = "l1",group = indicator_parameters_Vegas)
 Vegas_L2_Color  = input.color(color.blue, "576-676",inline = "l1", group = indicator_parameters_Vegas)
+Vegas_L2_Active   = input.bool(true, "",   inline = "l1",group = indicator_parameters_Vegas)
 
-plot(Vegas_Active?ta.ema(src, 10):na, color=Vegas_F_Color, linewidth=1)
-plot(Vegas_Active?ta.ema(src, 144):na, color=Vegas_L1_Color, linewidth=2)
-plot(Vegas_Active?ta.ema(src, 169):na, color=Vegas_L1_Color, linewidth=2)
-plot(Vegas_Active?ta.ema(src, 576):na, color=Vegas_L2_Color, linewidth=2)
-plot(Vegas_Active?ta.ema(src, 676):na, color=Vegas_L2_Color, linewidth=2)
+plot(Vegas_Active?(Vegas_F_Active?ta.ema(src, 10):na):na, color=Vegas_F_Color, linewidth=1)
+plot(Vegas_Active?(Vegas_L1_Active?ta.ema(src, 144):na):na, color=Vegas_L1_Color, linewidth=2)
+plot(Vegas_Active?(Vegas_L1_Active?ta.ema(src, 169):na):na, color=Vegas_L1_Color, linewidth=2)
+plot(Vegas_Active?(Vegas_L2_Active?ta.ema(src, 576):na):na, color=Vegas_L2_Color, linewidth=2)
+plot(Vegas_Active?(Vegas_L2_Active?ta.ema(src, 676):na):na, color=Vegas_L2_Color, linewidth=2)
 
 // ==============================
 // 五、XS Tunnel 设置（可开关）
 // ==============================
 var indicator_parameters_XS = "XS Tunnel 设置"
 
-XSTunnel_Channel1_Active = input.bool(true, "显示 Long Upper (Resistance)", group=indicator_parameters_XS)
-XSTunnel_Channel2_Active = input.bool(true, "显示 Long Lower (Support)", group=indicator_parameters_XS)
-XSTunnel_Channel3_Active = input.bool(true, "显示 Short Upper (Resistance)", group=indicator_parameters_XS)
-XSTunnel_Channel4_Active = input.bool(true, "显示 Short Lower (Support)", group=indicator_parameters_XS)
+XSTunnel_Channel1_Active = input.bool(true, "显示 Short Upper (Resistance)", group=indicator_parameters_XS)
+XSTunnel_Channel2_Active = input.bool(true, "显示 Short Lower (Support)", group=indicator_parameters_XS)
+XSTunnel_Channel3_Active = input.bool(true, "显示 Long Upper (Resistance)", group=indicator_parameters_XS)
+XSTunnel_Channel4_Active = input.bool(true, "显示 Long Lower (Support)", group=indicator_parameters_XS)
 
-XSTunnel_Fill_Long_Active  = input.bool(true, "显示 Long 通道填充", group=indicator_parameters_XS)
-XSTunnel_Fill_Short_Active = input.bool(true, "显示 Short 通道填充", group=indicator_parameters_XS)
+XSTunnel_Fill_Long_Active  = input.bool(true, "显示 Short 通道填充", group=indicator_parameters_XS)
+XSTunnel_Fill_Short_Active = input.bool(true, "显示 Long 通道填充", group=indicator_parameters_XS)
 // 输入参数
 N = input.int(102, title="Long Channel Multiplier N (80-120, default 102)", minval=1)
 M = input.float(7, title="Short Channel Multiplier M % (2-20, default 7)", minval=0.1)
@@ -115,3 +120,115 @@ pChannel4 = plot(XSTunnel_Active and XSTunnel_Channel4_Active ? channel4 : na, t
 fill(pChannel1, pChannel2, color=XSTunnel_Active and XSTunnel_Fill_Long_Active ? color.new(color.purple, 90) : na, title="Long-term Channel Fill")
 fill(pChannel3, pChannel4, color=XSTunnel_Active and XSTunnel_Fill_Short_Active ? color.new(color.orange, 85) : na, title="Short-term Channel Fill")
 
+// ZigZag -----
+var indicator_parameters_ZigZag="Zig Zag设置"
+ZigZag_Period = input.int(defval = 34, title="周期", minval = 2, maxval = 55,inline = "l1", group = indicator_parameters_ZigZag)
+ZigZag_Label_Location = input.string(defval = "Right", title = "标签位置", options = ["Left", "Right"],inline = "l1", group = indicator_parameters_ZigZag)
+
+ZigZag_U_Color = input.color(defval = color.lime, title = "曲折颜色",inline = "l2", group = indicator_parameters_ZigZag)
+ZigZag_L_Color = input.color(defval = color.red, title = "",inline = "l2", group = indicator_parameters_ZigZag)
+
+
+ZigZag_Fibo_Label_Color = input.color(defval = color.blue, title = "斐波颜色",inline = "l2", group = indicator_parameters_ZigZag)
+ZigZag_Fibo_Line_Color = input.color(defval = color.lime, title = "",inline = "l2", group = indicator_parameters_ZigZag)
+
+ZigZag_236_Active = input.bool(defval = true, title = "236",inline = "l3", group = indicator_parameters_ZigZag)
+ZigZag_382_Active = input.bool(defval = true, title = "382",inline = "l3", group = indicator_parameters_ZigZag)
+ZigZag_500_Active = input.bool(defval = true, title = "500",inline = "l3", group = indicator_parameters_ZigZag)
+ZigZag_618_Active = input.bool(defval = true, title = "618",inline = "l3", group = indicator_parameters_ZigZag)
+ZigZag_786_Active = input.bool(defval = true, title = "786",inline = "l3", group = indicator_parameters_ZigZag)
+
+var ZigZag_Fibo_Ratios = array.new_float(0)
+var ZigZag_Shown_Levels = 1
+if barstate.isfirst
+    array.push(ZigZag_Fibo_Ratios, 0.000)
+    if ZigZag_236_Active
+        array.push(ZigZag_Fibo_Ratios, 0.236)
+        ZigZag_Shown_Levels := ZigZag_Shown_Levels + 1
+    if ZigZag_382_Active
+        array.push(ZigZag_Fibo_Ratios, 0.382)
+        ZigZag_Shown_Levels := ZigZag_Shown_Levels + 1
+    if ZigZag_500_Active
+        array.push(ZigZag_Fibo_Ratios, 0.500)
+        ZigZag_Shown_Levels := ZigZag_Shown_Levels + 1
+    if ZigZag_618_Active
+        array.push(ZigZag_Fibo_Ratios, 0.618)
+        ZigZag_Shown_Levels := ZigZag_Shown_Levels + 1
+    if ZigZag_786_Active
+        array.push(ZigZag_Fibo_Ratios, 0.786)
+        ZigZag_Shown_Levels := ZigZag_Shown_Levels + 1
+    for x = 1 to 5
+        array.push(ZigZag_Fibo_Ratios, x)
+        array.push(ZigZag_Fibo_Ratios, x + 0.272)
+        array.push(ZigZag_Fibo_Ratios, x + 0.414)
+        array.push(ZigZag_Fibo_Ratios, x + 0.618)
+
+float ZigZag_Period_High = ta.highestbars(high, ZigZag_Period) == 0 ? high : na
+float ZigZag_Period_Low = ta.lowestbars(low, ZigZag_Period) == 0 ? low : na
+var ZigZag_Direction = 0
+ZigZag_Direction := not na(ZigZag_Period_High) and na(ZigZag_Period_Low) ? 1 : not na(ZigZag_Period_Low) and na(ZigZag_Period_High) ? -1 : ZigZag_Direction
+var ZigZag_Max_Array_Size = 10
+var ZigZag_Array = array.new_float(0)
+ZigZag_Array_Old = array.copy(ZigZag_Array)
+
+ZigZag_Add(value, bindex)=>
+    array.unshift(ZigZag_Array, bindex)
+    array.unshift(ZigZag_Array, value)
+    if array.size(ZigZag_Array) > ZigZag_Max_Array_Size
+        array.pop(ZigZag_Array)
+        array.pop(ZigZag_Array)
+    
+ZigZag_Update(value, bindex)=>
+    if array.size(ZigZag_Array) == 0
+        ZigZag_Add(value, bindex)
+    else
+        if (ZigZag_Direction == 1 and value > array.get(ZigZag_Array, 0)) or (ZigZag_Direction == -1 and value < array.get(ZigZag_Array, 0))
+            array.set(ZigZag_Array, 0, value)
+            array.set(ZigZag_Array, 1, bindex)
+        0.
+
+bool ZigZag_Direction_Changed = (ZigZag_Direction != ZigZag_Direction[1])
+if not na(ZigZag_Period_High) or not na(ZigZag_Period_Low)
+    if ZigZag_Direction_Changed
+        ZigZag_Add(ZigZag_Direction == 1 ? ZigZag_Period_High : ZigZag_Period_Low, bar_index)
+    else
+        ZigZag_Update(ZigZag_Direction == 1 ? ZigZag_Period_High : ZigZag_Period_Low, bar_index)
+
+if ZigZag_Main_Active and array.size(ZigZag_Array) >= 4 and array.size(ZigZag_Array_Old) >= 4
+    var line ZigZag_Line = na
+    if array.get(ZigZag_Array, 0) != array.get(ZigZag_Array_Old, 0) or array.get(ZigZag_Array, 1) != array.get(ZigZag_Array_Old, 1)
+        if array.get(ZigZag_Array, 2) == array.get(ZigZag_Array_Old, 2) and array.get(ZigZag_Array, 3) == math.round(array.get(ZigZag_Array_Old, 3))
+            line.delete(ZigZag_Line)
+        ZigZag_Line := line.new(x1 = math.round(array.get(ZigZag_Array, 1)), y1 = array.get(ZigZag_Array, 0), x2 = math.round(array.get(ZigZag_Array, 3)), y2 = array.get(ZigZag_Array, 2), color = ZigZag_Direction == 1 ? ZigZag_U_Color : ZigZag_L_Color, width = 2)
+
+var ZigZag_Fibo_Lines = array.new_line(0)
+var ZigZag_Fibo_Lables = array.new_label(0)
+if ZigZag_Fibo_Active and array.size(ZigZag_Array) >= 6 and barstate.islast
+    if array.size(ZigZag_Fibo_Lines) > 0
+        for x = 0 to array.size(ZigZag_Fibo_Lines) - 1
+            line.delete(array.get(ZigZag_Fibo_Lines, x))
+            label.delete(array.get(ZigZag_Fibo_Lables, x))
+            
+    ZigZag_Diff = array.get(ZigZag_Array, 4) - array.get(ZigZag_Array, 2)
+    ZigZag_Stopit = false
+    for x = 0 to array.size(ZigZag_Fibo_Ratios) - 1
+        if ZigZag_Stopit and x > ZigZag_Shown_Levels
+            break
+        array.unshift(ZigZag_Fibo_Lines, 
+                      line.new(x1 = math.round(array.get(ZigZag_Array, 5)), 
+                               y1 = array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x), 
+                               x2 = bar_index, 
+                               y2 = array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x), 
+                               color = ZigZag_Fibo_Line_Color,
+                               width = 2,
+                               extend = extend.right))
+        label_x_loc = ZigZag_Label_Location == "Left" ? math.round(array.get(ZigZag_Array, 5)) - 1 : bar_index + 15
+        array.unshift(ZigZag_Fibo_Lables, 
+                      label.new( x = label_x_loc, 
+                                 y = array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x), 
+                                 text = str.tostring(array.get(ZigZag_Fibo_Ratios, x), '#.###') + "(" + str.tostring(math.round_to_mintick(array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x))) + ")", 
+                                 textcolor = ZigZag_Fibo_Label_Color, 
+                                 style = label.style_none))
+        if (ZigZag_Direction == 1 and array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x) > array.get(ZigZag_Array, 0)) or
+           (ZigZag_Direction == -1 and array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x) < array.get(ZigZag_Array, 0))
+            ZigZag_Stopit := true
