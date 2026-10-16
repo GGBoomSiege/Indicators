@@ -1,142 +1,126 @@
-//@version=5
-indicator(title="Victorinox by Illupute v2", overlay=true)
+//@version=6
+indicator(title="Victorinox by Illupute v2 + FIBs", overlay=true, max_lines_count=500, max_labels_count=500)
 
-// ==============================
-// 一、基础设置
-// ==============================
-avr = (high+low)/2
-var indicator_parameters_Base="基础设置"
-src = input(close, title="Source",inline = "l1", group = indicator_parameters_Base)
-BBI_Active = input.bool(false, title="显示BBI",inline = "l2", group = indicator_parameters_Base)
-EMA_Active = input.bool(false, title="显示EMA",inline = "l2", group = indicator_parameters_Base)
-Vegas_Active  = input.bool(defval = true, title = "显示Vegas通道",inline = "l4", group = indicator_parameters_Base)
-XSTunnel_Active = input.bool(true, title="显示XS Tunnel", inline="l5", group=indicator_parameters_Base)  // 新增开关
-ZigZag_Main_Active = input.bool(defval = true, title = "显示曲折",inline = "l3", group = indicator_parameters_Base)
-ZigZag_Fibo_Active = input.bool(defval = true, title = "显示斐波",inline = "l3", group = indicator_parameters_Base)
+// ==================================================================================
+// 一、基础设置（原指标2）
+// ==================================================================================
+avr = (high + low) / 2
+var indicator_parameters_Base = "基础设置"
+src = input(close, title="Source", inline="l1", group=indicator_parameters_Base)
+BBI_Active = input.bool(false, title="显示BBI", inline="l2", group=indicator_parameters_Base)
+EMA_Active = input.bool(false, title="显示EMA", inline="l2", group=indicator_parameters_Base)
+Vegas_Active = input.bool(defval=true, title="显示Vegas通道", inline="l4", group=indicator_parameters_Base)
+XSTunnel_Active = input.bool(true, title="显示XS Tunnel", inline="l5", group=indicator_parameters_Base)
+ZigZag_Main_Active = input.bool(defval=true, title="显示曲折", inline="l3", group=indicator_parameters_Base)
+ZigZag_Fibo_Active = input.bool(defval=true, title="显示斐波", inline="l3", group=indicator_parameters_Base)
 
-// ==============================
+// ==================================================================================
 // 二、BBI 设置
-// ==============================
-var indicator_parameters_BBI="BBI 设置"
-BBI_M1=input.int(3,minval=1,title="N1",inline = "l1", group = indicator_parameters_BBI)
-BBI_M2=input.int(6,minval=1,title="N2",inline = "l1", group = indicator_parameters_BBI)
-BBI_M3=input.int(12,minval=1,title="N3",inline = "l2", group = indicator_parameters_BBI)
-BBI_M4=input.int(24,minval=1,title="N4",inline = "l2", group = indicator_parameters_BBI)
-BBI_Color_Long  = input.color(color.green, "Long",inline = "l2", group = indicator_parameters_BBI)
-BBI_Color_Short  = input.color(color.orange, "Short",inline = "l2", group = indicator_parameters_BBI)
+// ==================================================================================
+var indicator_parameters_BBI = "BBI 设置"
+BBI_M1 = input.int(3, minval=1, title="N1", inline="l1", group=indicator_parameters_BBI)
+BBI_M2 = input.int(6, minval=1, title="N2", inline="l1", group=indicator_parameters_BBI)
+BBI_M3 = input.int(12, minval=1, title="N3", inline="l2", group=indicator_parameters_BBI)
+BBI_M4 = input.int(24, minval=1, title="N4", inline="l2", group=indicator_parameters_BBI)
+BBI_Color_Long = input.color(color.green, "Long", inline="l2", group=indicator_parameters_BBI)
+BBI_Color_Short = input.color(color.orange, "Short", inline="l2", group=indicator_parameters_BBI)
 
-// BBI ema remix ma -----
 M1 = ta.ema(src, BBI_M1)
-M2 = (ta.sma(src, BBI_M2)*1.5+ta.ema(src, BBI_M2)*0.5)/2
-M3 = (ta.sma(src, BBI_M3)*0.5+ta.ema(src, BBI_M3)*1.5)/2
+M2 = (ta.sma(src, BBI_M2) * 1.5 + ta.ema(src, BBI_M2) * 0.5) / 2
+M3 = (ta.sma(src, BBI_M3) * 0.5 + ta.ema(src, BBI_M3) * 1.5) / 2
 M4 = ta.sma(src, BBI_M4)
+BBI_fix = (M1 + M2 + M3 + M4) / 4
+plot(BBI_Active ? BBI_fix : na, "BBI", color=(BBI_fix <= close ? BBI_Color_Long : BBI_Color_Short), linewidth=2)
 
-BBI_fix = (M1+ M2 + M3 + M4) / 4
-plot(BBI_Active?BBI_fix:na,"BBI", color=(BBI_fix<=close?BBI_Color_Long:BBI_Color_Short), linewidth=2)
-
-// ==============================
+// ==================================================================================
 // 三、EMA 设置
-// ==============================
-var indicator_parameters_EMA="EMA 设置"
-EMA_L1=input.int(5,minval=1,title="L1",inline = "l1", group = indicator_parameters_EMA)
-EMA_L1_Active   = input.bool(true, "",   inline = "l1",group = indicator_parameters_EMA)
-EMA_L2=input.int(20,minval=1,title="L2",inline = "l1", group = indicator_parameters_EMA)
-EMA_L2_Active   = input.bool(true, "",   inline = "l1",group = indicator_parameters_EMA)
-EMA_L3=input.int(60,minval=1,title="L3",inline = "l2", group = indicator_parameters_EMA)
-EMA_L3_Active   = input.bool(true, "",   inline = "l2",group = indicator_parameters_EMA)
-EMA_L4=input.int(120,minval=1,title="L4",inline = "l2", group = indicator_parameters_EMA)
-EMA_L4_Active   = input.bool(true, "",   inline = "l2",group = indicator_parameters_EMA)
+// ==================================================================================
+var indicator_parameters_EMA = "EMA 设置"
+EMA_L1 = input.int(5, minval=1, title="L1", inline="l1", group=indicator_parameters_EMA)
+EMA_L1_Active = input.bool(true, "", inline="l1", group=indicator_parameters_EMA)
+EMA_L2 = input.int(20, minval=1, title="L2", inline="l1", group=indicator_parameters_EMA)
+EMA_L2_Active = input.bool(true, "", inline="l1", group=indicator_parameters_EMA)
+EMA_L3 = input.int(60, minval=1, title="L3", inline="l2", group=indicator_parameters_EMA)
+EMA_L3_Active = input.bool(true, "", inline="l2", group=indicator_parameters_EMA)
+EMA_L4 = input.int(120, minval=1, title="L4", inline="l2", group=indicator_parameters_EMA)
+EMA_L4_Active = input.bool(true, "", inline="l2", group=indicator_parameters_EMA)
+EMA_L1_Color = input.color(color.red, "L1", inline="l3", group=indicator_parameters_EMA)
+EMA_L2_Color = input.color(color.yellow, "L2", inline="l3", group=indicator_parameters_EMA)
+EMA_L3_Color = input.color(color.green, "L3", inline="l3", group=indicator_parameters_EMA)
+EMA_L4_Color = input.color(color.blue, "L4", inline="l3", group=indicator_parameters_EMA)
 
-EMA_L1_Color  = input.color(color.red, "L1",inline = "l3", group = indicator_parameters_EMA)
-EMA_L2_Color  = input.color(color.yellow, "L2",inline = "l3", group = indicator_parameters_EMA)
-EMA_L3_Color  = input.color(color.green, "L3",inline = "l3", group = indicator_parameters_EMA)
-EMA_L4_Color  = input.color(color.blue, "L4",inline = "l3", group = indicator_parameters_EMA)
+plot(EMA_Active and EMA_L1_Active ? ta.ema(src, EMA_L1) : na, color=EMA_L1_Color, linewidth=2)
+plot(EMA_Active and EMA_L2_Active ? ta.ema(src, EMA_L2) : na, color=EMA_L2_Color, linewidth=2)
+plot(EMA_Active and EMA_L3_Active ? ta.ema(src, EMA_L3) : na, color=EMA_L3_Color, linewidth=2)
+plot(EMA_Active and EMA_L4_Active ? ta.ema(src, EMA_L4) : na, color=EMA_L4_Color, linewidth=2)
 
-plot(EMA_Active?(EMA_L1_Active?ta.ema(src, EMA_L1):na):na, color=EMA_L1_Color, linewidth=1)
-plot(EMA_Active?(EMA_L2_Active?ta.ema(src, EMA_L2):na):na, color=EMA_L2_Color, linewidth=1)
-plot(EMA_Active?(EMA_L3_Active?ta.ema(src, EMA_L3):na):na, color=EMA_L3_Color, linewidth=1)
-plot(EMA_Active?(EMA_L4_Active?ta.ema(src, EMA_L4):na):na, color=EMA_L4_Color, linewidth=1)
-
-// ==============================
+// ==================================================================================
 // 四、Vegas 设置
-// ==============================
-var indicator_parameters_Vegas="Vegas 设置"
+// ==================================================================================
+var indicator_parameters_Vegas = "Vegas 设置"
+Vegas_F_Color = input.color(color.orange, "10均线", inline="l1", group=indicator_parameters_Vegas)
+Vegas_F_Active = input.bool(true, "", inline="l1", group=indicator_parameters_Vegas)
+Vegas_L1_Color = input.color(color.rgb(98, 0, 255), "144-169通道", inline="l1", group=indicator_parameters_Vegas)
+Vegas_L1_Active = input.bool(true, "", inline="l1", group=indicator_parameters_Vegas)
+Vegas_L2_Color = input.color(color.blue, "576-676", inline="l1", group=indicator_parameters_Vegas)
+Vegas_L2_Active = input.bool(true, "", inline="l1", group=indicator_parameters_Vegas)
 
-Vegas_F_Color  = input.color(color.orange, "10均线",inline = "l1", group = indicator_parameters_Vegas)
-Vegas_F_Active   = input.bool(true, "",   inline = "l1",group = indicator_parameters_Vegas)
-Vegas_L1_Color  = input.color(color.rgb(98, 0, 255), "144-169通道",inline = "l1", group = indicator_parameters_Vegas)
-Vegas_L1_Active   = input.bool(true, "",   inline = "l1",group = indicator_parameters_Vegas)
-Vegas_L2_Color  = input.color(color.blue, "576-676",inline = "l1", group = indicator_parameters_Vegas)
-Vegas_L2_Active   = input.bool(true, "",   inline = "l1",group = indicator_parameters_Vegas)
+plot(Vegas_Active and Vegas_F_Active ? ta.ema(src, 10) : na, color=Vegas_F_Color, linewidth=1)
+plot(Vegas_Active and Vegas_L1_Active ? ta.ema(src, 144) : na, color=Vegas_L1_Color, linewidth=2)
+plot(Vegas_Active and Vegas_L1_Active ? ta.ema(src, 169) : na, color=Vegas_L1_Color, linewidth=2)
+plot(Vegas_Active and Vegas_L2_Active ? ta.ema(src, 576) : na, color=Vegas_L2_Color, linewidth=2)
+plot(Vegas_Active and Vegas_L2_Active ? ta.ema(src, 676) : na, color=Vegas_L2_Color, linewidth=2)
 
-plot(Vegas_Active?(Vegas_F_Active?ta.ema(src, 10):na):na, color=Vegas_F_Color, linewidth=1)
-plot(Vegas_Active?(Vegas_L1_Active?ta.ema(src, 144):na):na, color=Vegas_L1_Color, linewidth=2)
-plot(Vegas_Active?(Vegas_L1_Active?ta.ema(src, 169):na):na, color=Vegas_L1_Color, linewidth=2)
-plot(Vegas_Active?(Vegas_L2_Active?ta.ema(src, 576):na):na, color=Vegas_L2_Color, linewidth=2)
-plot(Vegas_Active?(Vegas_L2_Active?ta.ema(src, 676):na):na, color=Vegas_L2_Color, linewidth=2)
-
-// ==============================
-// 五、XS Tunnel 设置（可开关）
-// ==============================
+// ==================================================================================
+// 五、XS Tunnel 设置
+// ==================================================================================
 var indicator_parameters_XS = "XS Tunnel 设置"
-
 XSTunnel_Channel1_Active = input.bool(true, "显示 Short Upper (Resistance)", group=indicator_parameters_XS)
 XSTunnel_Channel2_Active = input.bool(true, "显示 Short Lower (Support)", group=indicator_parameters_XS)
 XSTunnel_Channel3_Active = input.bool(true, "显示 Long Upper (Resistance)", group=indicator_parameters_XS)
 XSTunnel_Channel4_Active = input.bool(true, "显示 Long Lower (Support)", group=indicator_parameters_XS)
-
-XSTunnel_Fill_Long_Active  = input.bool(true, "显示 Short 通道填充", group=indicator_parameters_XS)
+XSTunnel_Fill_Long_Active = input.bool(true, "显示 Short 通道填充", group=indicator_parameters_XS)
 XSTunnel_Fill_Short_Active = input.bool(true, "显示 Long 通道填充", group=indicator_parameters_XS)
-// 输入参数
+
 N = input.int(102, title="Long Channel Multiplier N (80-120, default 102)", minval=1)
 M = input.float(7, title="Short Channel Multiplier M % (2-20, default 7)", minval=0.1)
 
-// 长周期通道基准
 typicalPrice = (2 * close + high + low) / 4
 AA = ta.sma(typicalPrice, 5)
-
-// 长周期通道
 channel1 = XSTunnel_Channel1_Active ? AA * N / 100 : na
 channel2 = XSTunnel_Channel2_Active ? AA * (200 - N) / 100 : na
 
-// 短周期通道
 shortTypical = (2 * close + high + low) / 4
 ma20Close = ta.sma(close, 20)
 CC = math.abs(shortTypical - ma20Close) / ma20Close
-
 var float DD = na
 DD := CC * close + (1 - CC) * nz(DD[1], close)
-
 channel3 = XSTunnel_Channel3_Active ? DD * (1 + M / 100) : na
 channel4 = XSTunnel_Channel4_Active ? DD * (1 - M / 100) : na
 
-// 绘制线条（已经结合总开关）
-pChannel1 = plot(XSTunnel_Active and XSTunnel_Channel1_Active ? channel1 : na, title="Long Upper (Resistance)", color=color.gray, linewidth=2)
-pChannel2 = plot(XSTunnel_Active and XSTunnel_Channel2_Active ? channel2 : na, title="Long Lower (Support)", color=color.green, linewidth=2)
-pChannel3 = plot(XSTunnel_Active and XSTunnel_Channel3_Active ? channel3 : na, title="Short Upper (Resistance)", color=color.red, linewidth=2)
-pChannel4 = plot(XSTunnel_Active and XSTunnel_Channel4_Active ? channel4 : na, title="Short Lower (Support)", color=color.blue, linewidth=2)
+pChannel1 = plot(XSTunnel_Active and XSTunnel_Channel1_Active ? channel1 : na, title="Long Upper (Resistance)", color=color.gray, linewidth=3)
+pChannel2 = plot(XSTunnel_Active and XSTunnel_Channel2_Active ? channel2 : na, title="Long Lower (Support)", color=color.green, linewidth=3)
+pChannel3 = plot(XSTunnel_Active and XSTunnel_Channel3_Active ? channel3 : na, title="Short Upper (Resistance)", color=color.red, linewidth=3)
+pChannel4 = plot(XSTunnel_Active and XSTunnel_Channel4_Active ? channel4 : na, title="Short Lower (Support)", color=color.blue, linewidth=3)
 
-// 绘制填充区域（只用填充开关即可）
 fill(pChannel1, pChannel2, color=XSTunnel_Active and XSTunnel_Fill_Long_Active ? color.new(color.purple, 90) : na, title="Long-term Channel Fill")
 fill(pChannel3, pChannel4, color=XSTunnel_Active and XSTunnel_Fill_Short_Active ? color.new(color.orange, 85) : na, title="Short-term Channel Fill")
 
-// ZigZag -----
-var indicator_parameters_ZigZag="Zig Zag设置"
-ZigZag_Period = input.int(defval = 34, title="周期", minval = 2, maxval = 55,inline = "l1", group = indicator_parameters_ZigZag)
-ZigZag_Label_Location = input.string(defval = "Right", title = "标签位置", options = ["Left", "Right"],inline = "l1", group = indicator_parameters_ZigZag)
-
-ZigZag_U_Color = input.color(defval = color.lime, title = "曲折颜色",inline = "l2", group = indicator_parameters_ZigZag)
-ZigZag_L_Color = input.color(defval = color.red, title = "",inline = "l2", group = indicator_parameters_ZigZag)
-
-
-ZigZag_Fibo_Label_Color = input.color(defval = color.blue, title = "斐波颜色",inline = "l2", group = indicator_parameters_ZigZag)
-ZigZag_Fibo_Line_Color = input.color(defval = color.lime, title = "",inline = "l2", group = indicator_parameters_ZigZag)
-
-ZigZag_236_Active = input.bool(defval = true, title = "236",inline = "l3", group = indicator_parameters_ZigZag)
-ZigZag_382_Active = input.bool(defval = true, title = "382",inline = "l3", group = indicator_parameters_ZigZag)
-ZigZag_500_Active = input.bool(defval = true, title = "500",inline = "l3", group = indicator_parameters_ZigZag)
-ZigZag_618_Active = input.bool(defval = true, title = "618",inline = "l3", group = indicator_parameters_ZigZag)
-ZigZag_786_Active = input.bool(defval = true, title = "786",inline = "l3", group = indicator_parameters_ZigZag)
+// ==================================================================================
+// 六、原指标2 ZigZag + Fibo（保持不变）
+// ==================================================================================
+var indicator_parameters_ZigZag = "Zig Zag设置"
+ZigZag_Period = input.int(defval=34, title="周期", minval=2, maxval=55, inline="l1", group=indicator_parameters_ZigZag)
+ZigZag_Label_Location = input.string(defval="Right", title="标签位置", options=["Left", "Right"], inline="l1", group=indicator_parameters_ZigZag)
+ZigZag_U_Color = input.color(defval=color.lime, title="曲折颜色", inline="l2", group=indicator_parameters_ZigZag)
+ZigZag_L_Color = input.color(defval=color.red, title="", inline="l2", group=indicator_parameters_ZigZag)
+ZigZag_Fibo_Label_Color = input.color(defval=color.blue, title="斐波颜色", inline="l2", group=indicator_parameters_ZigZag)
+ZigZag_Fibo_Line_Color = input.color(defval=color.lime, title="", inline="l2", group=indicator_parameters_ZigZag)
+ZigZag_236_Active = input.bool(defval=true, title="236", inline="l3", group=indicator_parameters_ZigZag)
+ZigZag_382_Active = input.bool(defval=true, title="382", inline="l3", group=indicator_parameters_ZigZag)
+ZigZag_500_Active = input.bool(defval=true, title="500", inline="l3", group=indicator_parameters_ZigZag)
+ZigZag_618_Active = input.bool(defval=true, title="618", inline="l3", group=indicator_parameters_ZigZag)
+ZigZag_786_Active = input.bool(defval=true, title="786", inline="l3", group=indicator_parameters_ZigZag)
 
 var ZigZag_Fibo_Ratios = array.new_float(0)
 var ZigZag_Shown_Levels = 1
@@ -171,14 +155,14 @@ var ZigZag_Max_Array_Size = 10
 var ZigZag_Array = array.new_float(0)
 ZigZag_Array_Old = array.copy(ZigZag_Array)
 
-ZigZag_Add(value, bindex)=>
+ZigZag_Add(value, bindex) =>
     array.unshift(ZigZag_Array, bindex)
     array.unshift(ZigZag_Array, value)
     if array.size(ZigZag_Array) > ZigZag_Max_Array_Size
         array.pop(ZigZag_Array)
         array.pop(ZigZag_Array)
-    
-ZigZag_Update(value, bindex)=>
+
+ZigZag_Update(value, bindex) =>
     if array.size(ZigZag_Array) == 0
         ZigZag_Add(value, bindex)
     else
@@ -199,7 +183,7 @@ if ZigZag_Main_Active and array.size(ZigZag_Array) >= 4 and array.size(ZigZag_Ar
     if array.get(ZigZag_Array, 0) != array.get(ZigZag_Array_Old, 0) or array.get(ZigZag_Array, 1) != array.get(ZigZag_Array_Old, 1)
         if array.get(ZigZag_Array, 2) == array.get(ZigZag_Array_Old, 2) and array.get(ZigZag_Array, 3) == math.round(array.get(ZigZag_Array_Old, 3))
             line.delete(ZigZag_Line)
-        ZigZag_Line := line.new(x1 = math.round(array.get(ZigZag_Array, 1)), y1 = array.get(ZigZag_Array, 0), x2 = math.round(array.get(ZigZag_Array, 3)), y2 = array.get(ZigZag_Array, 2), color = ZigZag_Direction == 1 ? ZigZag_U_Color : ZigZag_L_Color, width = 2)
+        ZigZag_Line := line.new(x1=math.round(array.get(ZigZag_Array, 1)), y1=array.get(ZigZag_Array, 0), x2=math.round(array.get(ZigZag_Array, 3)), y2=array.get(ZigZag_Array, 2), color=ZigZag_Direction == 1 ? ZigZag_U_Color : ZigZag_L_Color, width=2)
 
 var ZigZag_Fibo_Lines = array.new_line(0)
 var ZigZag_Fibo_Lables = array.new_label(0)
@@ -208,27 +192,594 @@ if ZigZag_Fibo_Active and array.size(ZigZag_Array) >= 6 and barstate.islast
         for x = 0 to array.size(ZigZag_Fibo_Lines) - 1
             line.delete(array.get(ZigZag_Fibo_Lines, x))
             label.delete(array.get(ZigZag_Fibo_Lables, x))
-            
     ZigZag_Diff = array.get(ZigZag_Array, 4) - array.get(ZigZag_Array, 2)
     ZigZag_Stopit = false
     for x = 0 to array.size(ZigZag_Fibo_Ratios) - 1
         if ZigZag_Stopit and x > ZigZag_Shown_Levels
             break
-        array.unshift(ZigZag_Fibo_Lines, 
-                      line.new(x1 = math.round(array.get(ZigZag_Array, 5)), 
-                               y1 = array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x), 
-                               x2 = bar_index, 
-                               y2 = array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x), 
-                               color = ZigZag_Fibo_Line_Color,
-                               width = 2,
-                               extend = extend.right))
+        array.unshift(ZigZag_Fibo_Lines, line.new(x1=math.round(array.get(ZigZag_Array, 5)), y1=array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x), x2=bar_index, y2=array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x), color=ZigZag_Fibo_Line_Color, width=2, extend=extend.right))
         label_x_loc = ZigZag_Label_Location == "Left" ? math.round(array.get(ZigZag_Array, 5)) - 1 : bar_index + 15
-        array.unshift(ZigZag_Fibo_Lables, 
-                      label.new( x = label_x_loc, 
-                                 y = array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x), 
-                                 text = str.tostring(array.get(ZigZag_Fibo_Ratios, x), '#.###') + "(" + str.tostring(math.round_to_mintick(array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x))) + ")", 
-                                 textcolor = ZigZag_Fibo_Label_Color, 
-                                 style = label.style_none))
-        if (ZigZag_Direction == 1 and array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x) > array.get(ZigZag_Array, 0)) or
-           (ZigZag_Direction == -1 and array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x) < array.get(ZigZag_Array, 0))
+        array.unshift(ZigZag_Fibo_Lables, label.new(x=label_x_loc, y=array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x), text=str.tostring(array.get(ZigZag_Fibo_Ratios, x), "#.###") + "(" + str.tostring(math.round_to_mintick(array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x))) + ")", textcolor=ZigZag_Fibo_Label_Color, style=label.style_none))
+        if (ZigZag_Direction == 1 and array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x) > array.get(ZigZag_Array, 0)) or (ZigZag_Direction == -1 and array.get(ZigZag_Array, 2) + ZigZag_Diff * array.get(ZigZag_Fibo_Ratios, x) < array.get(ZigZag_Array, 0))
             ZigZag_Stopit := true
+
+// ==================================================================================
+// 七、指标1 FIBs 工具（完整融入，增加总开关）
+// ==================================================================================
+display = display.all - display.status_line
+
+// --- 总开关 ---
+group_fib_main = "FIBs · 总开关"
+FIB_Active = input.bool(false, "启用 FIBs 工具（Pivot / Retracement / Extension / TimeZone）", group=group_fib_main)
+
+group_pick = "FIBs · 工具选择"
+tooltip_fib_tool =
+     "Chooses which Fibonacci tool to display.\n\n" +
+     "• Pivot Points: Static, structure-based reference levels.\n" +
+     "• Retracements: Measures pullbacks within an existing move.\n" +
+     "• Retracements + Pivot Points: Combines internal retracements with structural pivots.\n" +
+     "• Extensions: Projects continuation targets beyond the current range.\n" +
+     "• Extensions + Pivot Points: Combines projected targets with structural pivots.\n\n" +
+     "Use combinations to identify high-probability confluence zones."
+i_isFib = input.bool(true, "Pick a Fibonacci Tool", inline="FIB", group=group_pick, tooltip=tooltip_fib_tool)
+i_fibTool = input.string("Pivot Points", "             ", options=["Pivot Points", "Retracements", "Retracements + Pivot Points", "Extensions", "Extensions + Pivot Points"], inline="FIB", group=group_pick, display=display)
+tooltip_fib_tz =
+     "Displays Fibonacci Time Zones\n\n" +
+     "Time Zones project potential timing windows where price reactions, accelerations, or trend changes may occur.\n\n" +
+     "This tool focuses on *when* a reaction may happen, rather than *where*."
+i_fibTime = input.bool(true, "Fibonacci Time Zones", group=group_pick, tooltip=tooltip_fib_tz)
+
+groupSwing = "FIBs · Swing Detection Settings"
+tooltip_threshold =
+     "Controls how price swings are detected.\n\n" +
+     "Deviation:\n" +
+     "Defines the minimum ATR-based price movement required to confirm a new swing. Higher values filter noise and highlight more significant structure.\n\n" +
+     "Depth:\n" +
+     "Defines the minimum number of bars required to confirm a swing high or low. Higher values produce smoother structure but react more slowly."
+i_dev_thresh = ta.atr(10) / close * 100 * input.float(3, "Deviation", minval=0, inline="Pivots", group=groupSwing, tooltip=tooltip_threshold, display=display)
+i_depth = input.int(11, "       Depth", minval=1, inline="Pivots", group=groupSwing, display=display)
+
+group_pivot = "FIBs · Fibonacci Pivot Points Settings"
+tooltip_htf =
+     "Defines the timeframe used to calculate Pivot Points.\n\n" +
+     "Manual Selection:\n" +
+     "• 15 Min / 1 Hour / 4 Hour → Uses the selected intraday timeframe.\n" +
+     "• Daily → Anchors to calendar days.\n" +
+     "• Weekly → Anchors to calendar weeks.\n" +
+     "• Monthly → Anchors to calendar months.\n" +
+     "• Quarterly → Anchors to calendar quarters.\n" +
+     "• Yearly → Anchors to calendar years.\n\n" +
+     "Auto Mode (Default):\n" +
+     "Automatically selects an appropriate higher timeframe based on the chart timeframe:\n" +
+     "• Intraday ≤ 15 min → Daily pivots\n" +
+     "• Intraday 30-240 min → Weekly pivots\n" +
+     "• Daily charts → Monthly pivots\n" +
+     "• Weekly / Monthly charts → Yearly pivots\n\n" +
+     "Auto mode is designed to provide context-aware pivot levels without manual adjustment."
+htf_tf = input.string("Auto", "Pivot Points Timeframe", options=["Auto", "15 Min", "1 Hour", "4 Hour", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly"], group=group_pivot, tooltip=tooltip_htf, display=display)
+i_levelsPvt = input.string("Levels", "Level Labels", options=["Levels", "Prices", "Levels + Prices", "None"], inline="pvt", group=group_pivot, display=display)
+i_levelsPvtP = input.string("Pivot End", "", options=["Last Bar", "Pivot End"], inline="pvt", group=group_pivot, display=display)
+i_levelsPvtS = input.string("Small", "", options=["Small", "Normal"], inline="pvt", group=group_pivot, display=display)
+i_relevant = input.bool(false, "Only Relevant Pivot Point Levels", group=group_pivot)
+i_histPP = input.bool(false, "Historical Pivot Points", group=group_pivot)
+i_extend = input.bool(false, "Extend Pivot Point Lines", inline="fLines", group=group_pivot)
+i_extendL = input.string("Dashed", "", options=["Dashed", "Dotted", "Solid"], inline="fLines", group=group_pivot, display=display)
+
+group_fib_tool = "FIBs · Fibonacci Extension / Retracement Settings"
+i_levels = input.string("Levels", "Level Labels", options=["Levels", "Prices", "Levels + Prices", "None"], inline="fLines", group=group_fib_tool, display=display)
+i_levelsP = input.string("Pivot Start", "", options=["Last Bar", "Pivot Start"], inline="fLines", group=group_fib_tool, display=display)
+i_levelsS = input.string("Small", "", options=["Small", "Normal"], inline="fLines", group=group_fib_tool, display=display)
+i_reverse = input.bool(false, "Reverse Extension / Retracement Levels", group=group_fib_tool)
+i_extendER = input.bool(false, "Extend Extension / Retracement Lines", inline="fLine", group=group_fib_tool)
+i_histPivot = input.int(0, "Historical Extension / Retracement Levels", minval=0, group=group_fib_tool, display=display)
+
+group_fib_tz = "FIBs · Fibonacci TimeZone Settings"
+i_fib_tzl = input.bool(true, "Time Zone Labels", inline="tz poz", group=group_fib_tz)
+i_fib_tzlp = input.string("Left", "", options=["Right", "Left"], inline="tz poz", group=group_fib_tz, display=display)
+fib_tzlp = i_fib_tzlp == "Left" ? label.style_label_left : label.style_label_right
+i_fib_tzlp2 = input.string("Bottom", "", options=["Bottom", "Top"], inline="tz poz", group=group_fib_tz, display=display)
+i_tzColor = input.color(#2196f3, "Time Zone Line Color", group=group_fib_tz)
+i_histPivot2 = input.int(0, "Historical Time Zones", minval=0, group=group_fib_tz, display=display)
+
+group_zigzag = "FIBs · ZigZag Settings"
+tooltip_zigzag =
+     "ZigZag Structure Visualization\n\n" +
+     "Identifies meaningful price swings and connects them with straight lines to clarify overall price structure.\n\n" +
+     "By filtering out minor fluctuations and market noise, ZigZag helps highlight dominant trends and potential trend changes over time."
+i_zigZag = input.bool(false, "Zig Zag", inline="ZZ", group=group_zigzag, tooltip=tooltip_zigzag)
+i_zzColor = input.color(#c77a08, "", inline="ZZ", group=group_zigzag)
+i_zzStyle = input.string("Solid", "", options=["Dashed", "Dotted", "Solid"], inline="ZZ", group=group_zigzag, display=display)
+i_zzWidth = input.int(1, "", minval=1, inline="ZZ", group=group_zigzag, display=display)
+tooltip_zz_swings =
+     "ZigZag Swing Points\n\n" +
+     "Displays swing highs and lows derived from the ZigZag structure.\n\n" +
+     "• Highs: Confirmed swing highs\n" +
+     "• Lows: Confirmed swing lows\n" +
+     "• Temps: Temporary (unconfirmed) swings that may update as price evolves\n\n" +
+     "Swing points help visualize market structure, momentum shifts, and potential reaction zones."
+zzSwings = input.bool(true, "Zig Zag Swing, ", inline="ZZ2", group=group_zigzag, tooltip=tooltip_zz_swings)
+pHighC = input.color(#d4a5a5, "Highs", inline="ZZ2", group=group_zigzag)
+pLowC = input.color(#8faadc, "Lows", inline="ZZ2", group=group_zigzag)
+pTemC = input.color(#0000f0, "Temps", inline="ZZ2", group=group_zigzag)
+
+// --- FIBs Calculations（仅在 FIB_Active 时执行核心逻辑，减少开销）---
+var line lineLast = na
+var int iLast = 0
+var int iPrev = 0
+var float pLast = 0.
+var isHighLast = false
+var iPrevPivot = 0
+var pPrevPivot = 0.
+var iLastPivot = 0
+var pLastPivot = 0.
+
+pivots(src, length, isHigh) =>
+    l2 = length * 2
+    c = nz(src[length])
+    ok = true
+    for i = 0 to l2 by 1
+        if isHigh and src[i] > c
+            ok := false
+            ok
+        if not isHigh and src[i] < c
+            ok := false
+            ok
+    if ok
+        [bar_index[length], c]
+    else
+        [int(na), float(na)]
+
+[iH, pH] = pivots(high, i_depth / 2, true)
+[iL, pL] = pivots(low, i_depth / 2, false)
+
+calc_dev(base_price, price) =>
+    100 * (price - base_price) / price
+
+pivotFound(dev, isHigh, index, price) =>
+    if isHighLast == isHigh and not na(lineLast)
+        if isHighLast ? price > pLast : price < pLast
+            line.set_xy2(lineLast, index, price)
+            [lineLast, isHighLast]
+        else
+            [line(na), bool(na)]
+    else
+        if math.abs(dev) > i_dev_thresh
+            [zzCol, zzWid, zzSty] = if not i_zigZag
+                [na, 1, line.style_dashed]
+            else
+                [i_zzColor, i_zzWidth, i_zzStyle == "Solid" ? line.style_solid : i_zzStyle == "Dotted" ? line.style_dotted : line.style_dashed]
+            id = line.new(iLast, pLast, index, price, color=zzCol, width=zzWid, style=zzSty)
+            [id, isHigh]
+        else
+            [line(na), bool(na)]
+
+if FIB_Active
+    if not na(iH)
+        var label lbTmp = na
+        dev = calc_dev(pLast, pH)
+        [id, isHigh] = pivotFound(dev, true, iH, pH)
+        if not na(id)
+            if id != lineLast
+                iPrevPivot := line.get_x1(lineLast)
+                pPrevPivot := line.get_y1(lineLast)
+                iLastPivot := line.get_x2(lineLast)
+                pLastPivot := line.get_y2(lineLast)
+                if zzSwings
+                    label.new(iPrevPivot, pPrevPivot, "▼", xloc.bar_index, yloc.price, color.new(color.white, 100), label.style_label_down, pHighC, size.small, text.align_center, "ZigZag Swing High\nPrice : " + str.tostring(pPrevPivot, format.mintick))
+                if not i_zigZag
+                    line.delete(lineLast)
+            lineLast := id
+            isHighLast := isHigh
+            iPrev := iLast
+            iLast := iH
+            pLast := pH
+            if zzSwings
+                lbTmp.delete()
+                lbTmp := label.new(iLast, pLast, "●\n▼", xloc.bar_index, yloc.price, color.new(color.white, 100), label.style_label_down, pTemC, size.small, text.align_center, "Temporary ZigZag Swing High\nPrice : " + str.tostring(pLast, format.mintick) + "\n\n⚠ Provisional level\n" + "Subject to repaint until structure confirms")
+    else if not na(iL)
+        var label lbTmp = na
+        dev = calc_dev(pLast, pL)
+        [id, isHigh] = pivotFound(dev, false, iL, pL)
+        if not na(id)
+            if id != lineLast
+                iPrevPivot := line.get_x1(lineLast)
+                pPrevPivot := line.get_y1(lineLast)
+                iLastPivot := line.get_x2(lineLast)
+                pLastPivot := line.get_y2(lineLast)
+                if zzSwings
+                    label.new(iPrevPivot, pPrevPivot, "▲", xloc.bar_index, yloc.price, color.new(color.white, 100), label.style_label_up, pLowC, size.small, text.align_center, "ZigZag Swing Low\nPrice : " + str.tostring(pPrevPivot, format.mintick))
+                if not i_zigZag
+                    line.delete(lineLast)
+            lineLast := id
+            isHighLast := isHigh
+            iPrev := iLast
+            iLast := iL
+            pLast := pL
+            if zzSwings
+                lbTmp.delete()
+                lbTmp := label.new(iLast, pLast, "▲\n●", xloc.bar_index, yloc.price, color.new(color.white, 100), label.style_label_up, pTemC, size.small, text.align_center, "Temporary ZigZag Swing Low\nPrice : " + str.tostring(pLast, format.mintick) + "\n\n⚠ Provisional level\n" + "Subject to repaint until structure confirms")
+
+iStartBase = i_histPivot > 0 ? ta.valuewhen(ta.change(iPrevPivot) != 0, iPrevPivot, i_histPivot) : ta.valuewhen(ta.change(iPrevPivot) != 0, iPrevPivot, 0)
+pStartBase = i_histPivot > 0 ? ta.valuewhen(ta.change(pPrevPivot) != 0, pPrevPivot, i_histPivot) : ta.valuewhen(ta.change(pPrevPivot) != 0, pPrevPivot, 0)
+iEndBase = i_histPivot > 0 ? ta.valuewhen(ta.change(iLastPivot) != 0, iLastPivot, i_histPivot - 1) : line.get_x2(lineLast)
+pEndBase = i_histPivot > 0 ? ta.valuewhen(ta.change(pLastPivot) != 0, pLastPivot, i_histPivot - 1) : line.get_y2(lineLast)
+iMidPivot = i_histPivot > 0 ? ta.valuewhen(ta.change(iPrevPivot) != 0, iPrevPivot, i_histPivot - 1) : line.get_x1(lineLast)
+pMidPivot = i_histPivot > 0 ? ta.valuewhen(ta.change(pPrevPivot) != 0, pPrevPivot, i_histPivot - 1) : line.get_y1(lineLast)
+iEndBase2 = i_histPivot2 > 0 ? ta.valuewhen(ta.change(iLastPivot) != 0, iLastPivot, i_histPivot2 - 1) : line.get_x2(lineLast)
+pEndBase2 = i_histPivot2 > 0 ? ta.valuewhen(ta.change(pLastPivot) != 0, pLastPivot, i_histPivot2 - 1) : line.get_y2(lineLast)
+iMidPivot2 = i_histPivot2 > 0 ? ta.valuewhen(ta.change(iPrevPivot) != 0, iPrevPivot, i_histPivot2 - 1) : line.get_x1(lineLast)
+pMidPivot2 = i_histPivot2 > 0 ? ta.valuewhen(ta.change(pPrevPivot) != 0, pPrevPivot, i_histPivot2 - 1) : line.get_y1(lineLast)
+
+htf =
+     htf_tf == "15 Min" ? "15" :
+     htf_tf == "1 Hour" ? "60" :
+     htf_tf == "4 Hour" ? "240" :
+     htf_tf == "Session" ? "D" :
+     htf_tf == "Daily" ? "D" :
+     htf_tf == "Weekly" ? "W" :
+     htf_tf == "Monthly" ? "M" :
+     htf_tf == "Quarterly" ? "3M" :
+     htf_tf == "Yearly" ? "12M" :
+     timeframe.isintraday and (timeframe.period == "1" or timeframe.period == "3" or timeframe.period == "5" or timeframe.period == "15") ? "D" :
+     timeframe.isintraday and (timeframe.period == "30" or timeframe.period == "45" or timeframe.period == "60" or timeframe.period == "120" or timeframe.period == "180" or timeframe.period == "240") ? "W" :
+     timeframe.isdaily ? "M" :
+     timeframe.isweekly or timeframe.ismonthly ? "12M" :
+     "3M"
+
+f_htf_ohlc(_htf) =>
+    var htf_o = 0.
+    var htf_h = 0.
+    var htf_l = 0.
+    htf_c = close
+    var htf_ox = 0.
+    var htf_hx = 0.
+    var htf_lx = 0.
+    var htf_cx = 0.
+    if timeframe.change(_htf)
+        htf_ox := htf_o
+        htf_o := open
+        htf_hx := htf_h
+        htf_h := high
+        htf_lx := htf_l
+        htf_l := low
+        htf_cx := htf_c[1]
+        htf_cx
+    else
+        htf_h := math.max(high, htf_h)
+        htf_l := math.min(low, htf_l)
+        htf_l
+    [htf_ox, htf_hx, htf_lx, htf_cx, htf_o, htf_h, htf_l, htf_c]
+
+[_, htf_h1, htf_l1, htf_c1, _, _, _, _] = f_htf_ohlc(htf)
+
+// --- Plotting helpers ---
+time_x10 = ta.valuewhen(bool(ta.change(time(htf))), time, 1)
+time_x11 = ta.valuewhen(bool(ta.change(time(htf))), time, 0)
+time_x21 = 2 * time_x11 - time_x10
+
+f_drawLineX(_x1, _y1, _x2, _y2, _xloc, _extend, _color, _style, _width) =>
+    var id = line.new(_x1, _y1, _x2, _y2, _xloc, _extend, _color, _style, _width)
+    if _y1 > 0 and _y2 > 0
+        line.set_xy1(id, _x1, _y1)
+        line.set_xy2(id, _x2, _y2)
+        line.set_color(id, _color)
+    else
+        line.set_xy1(id, _x1, close)
+        line.set_xy2(id, _x2, close)
+        line.set_color(id, #00000000)
+
+f_drawLabelX(_x, _y, _text, _xloc, _yloc, _color, _style, _textcolor, _size, _textalign, _tooltip) =>
+    var id = label.new(_x, _y, _text, _xloc, _yloc, _color, _style, _textcolor, _size, _textalign, _tooltip)
+    label.set_text(id, i_extend or i_extendER or i_levelsP == "Last Bar" ? _text + "\n\n" : _text)
+    label.set_tooltip(id, _tooltip)
+    if _y > 0
+        label.set_xy(id, _x, _y)
+        label.set_textcolor(id, _textcolor)
+    else
+        label.set_xy(id, _x, close)
+        label.set_textcolor(id, #00000000)
+
+f_crossingLevel(_curret, _level) =>
+    _level > _curret and _level < _curret[1] or _level < _curret and _level > _curret[1]
+
+var ln = array.new_line()
+var lb = array.new_label()
+if bool(ta.change(time)) and array.size(ln) > 0
+    for i = 1 to array.size(ln) by 1
+        line.delete(array.shift(ln))
+if bool(ta.change(time)) and array.size(lb) > 0
+    for i = 1 to array.size(lb) by 1
+        label.delete(array.shift(lb))
+
+f_drawLineTZ(_x1, _y1, _x2, _y2, _xloc, _extend, _c, _s, _w) =>
+    if _x1 - bar_index < 500
+        array.push(ln, line.new(_x1, _y1, _x2, _y2, _xloc, _extend, _c, _s, _w))
+
+f_drawLabelTZ(_x, _y, _text, _xloc, _yloc, _color, _style, _textcolor, _size, _textalign, _tooltip) =>
+    if _x - bar_index < 500
+        array.push(lb, label.new(_x, _y, _text, _xloc, _yloc, _color, _style, _textcolor, _size, _textalign, _tooltip))
+
+f_drawLinePVT(_x1, _y1, _x2, _y2, _xloc, _extend, _c, _s, _w) =>
+    if _y1 > 0
+        array.push(ln, line.new(_x1, _y1, _x2, _y2, _xloc, _extend, _c, _s, _w))
+
+f_drawLabelPVT(_x, _y, _text, _xloc, _yloc, _color, _style, _textcolor, _size, _textalign, _tooltip) =>
+    if _y > 0
+        array.push(lb, label.new(_x, _y, i_extend or i_levelsPvtP == "Last Bar" ? _text + "\n\n" : _text, _xloc, _yloc, _color, _style, _textcolor, _size, _textalign, _tooltip))
+
+if FIB_Active and i_fibTime
+    referance = math.round(iEndBase2 - iMidPivot2)
+    f_drawLineTZ(iMidPivot2 - referance, pEndBase2, iMidPivot2 - referance, pMidPivot2, xloc.bar_index, extend.both, i_tzColor, line.style_solid, 1)
+    f_drawLineTZ(iMidPivot2, pEndBase2, iMidPivot2, pMidPivot2, xloc.bar_index, extend.both, color.gray, line.style_solid, 1)
+    f_drawLineTZ(iMidPivot2 + referance, pEndBase2, iMidPivot2 + referance, pMidPivot2, xloc.bar_index, extend.both, color.gray, line.style_solid, 1)
+    f_drawLineTZ(iMidPivot2 + referance * 2, pEndBase2, iMidPivot2 + referance * 2, pMidPivot2, xloc.bar_index, extend.both, i_tzColor, line.style_solid, 1)
+    f_drawLineTZ(iMidPivot2 + referance * 3, pEndBase2, iMidPivot2 + referance * 3, pMidPivot2, xloc.bar_index, extend.both, i_tzColor, line.style_solid, 1)
+    f_drawLineTZ(iMidPivot2 + referance * 5, pEndBase2, iMidPivot2 + referance * 5, pMidPivot2, xloc.bar_index, extend.both, i_tzColor, line.style_solid, 1)
+    f_drawLineTZ(iMidPivot2 + referance * 8, pEndBase2, iMidPivot2 + referance * 8, pMidPivot2, xloc.bar_index, extend.both, i_tzColor, line.style_solid, 1)
+    f_drawLineTZ(iMidPivot2 + referance * 13, pEndBase2, iMidPivot2 + referance * 13, pMidPivot2, xloc.bar_index, extend.both, i_tzColor, line.style_solid, 1)
+    f_drawLineTZ(iMidPivot2 + referance * 21, pEndBase2, iMidPivot2 + referance * 21, pMidPivot2, xloc.bar_index, extend.both, i_tzColor, line.style_solid, 1)
+    f_drawLineTZ(iMidPivot2 + referance * 34, pEndBase2, iMidPivot2 + referance * 34, pMidPivot2, xloc.bar_index, extend.both, i_tzColor, line.style_solid, 1)
+    f_drawLineTZ(iMidPivot2 + referance * 55, pEndBase2, iMidPivot2 + referance * 55, pMidPivot2, xloc.bar_index, extend.both, i_tzColor, line.style_solid, 1)
+    f_drawLineTZ(iMidPivot2 + referance * 89, pEndBase2, iMidPivot2 + referance * 89, pMidPivot2, xloc.bar_index, extend.both, i_tzColor, line.style_solid, 1)
+    if i_fib_tzl
+        f_drawLabelTZ(iMidPivot2 + referance * -1, i_fib_tzlp2 == "Bottom" ? math.min(pEndBase2, pMidPivot2) : math.max(pEndBase2, pMidPivot2), "-1", xloc.bar_index, yloc.price, #00000000, fib_tzlp, i_tzColor, size.normal, text.align_center, "")
+        f_drawLabelTZ(iMidPivot2 + referance * 0, i_fib_tzlp2 == "Bottom" ? math.min(pEndBase2, pMidPivot2) : math.max(pEndBase2, pMidPivot2), "0", xloc.bar_index, yloc.price, #00000000, fib_tzlp, color.gray, size.normal, text.align_center, "")
+        f_drawLabelTZ(iMidPivot2 + referance * 1, i_fib_tzlp2 == "Bottom" ? math.min(pEndBase2, pMidPivot2) : math.max(pEndBase2, pMidPivot2), "1", xloc.bar_index, yloc.price, #00000000, fib_tzlp, color.gray, size.normal, text.align_center, "")
+        f_drawLabelTZ(iMidPivot2 + referance * 2, i_fib_tzlp2 == "Bottom" ? math.min(pEndBase2, pMidPivot2) : math.max(pEndBase2, pMidPivot2), "2", xloc.bar_index, yloc.price, #00000000, fib_tzlp, i_tzColor, size.normal, text.align_center, "")
+        f_drawLabelTZ(iMidPivot2 + referance * 3, i_fib_tzlp2 == "Bottom" ? math.min(pEndBase2, pMidPivot2) : math.max(pEndBase2, pMidPivot2), "3", xloc.bar_index, yloc.price, #00000000, fib_tzlp, i_tzColor, size.normal, text.align_center, "")
+        f_drawLabelTZ(iMidPivot2 + referance * 5, i_fib_tzlp2 == "Bottom" ? math.min(pEndBase2, pMidPivot2) : math.max(pEndBase2, pMidPivot2), "5", xloc.bar_index, yloc.price, #00000000, fib_tzlp, i_tzColor, size.normal, text.align_center, "")
+        f_drawLabelTZ(iMidPivot2 + referance * 8, i_fib_tzlp2 == "Bottom" ? math.min(pEndBase2, pMidPivot2) : math.max(pEndBase2, pMidPivot2), "8", xloc.bar_index, yloc.price, #00000000, fib_tzlp, i_tzColor, size.normal, text.align_center, "")
+        f_drawLabelTZ(iMidPivot2 + referance * 13, i_fib_tzlp2 == "Bottom" ? math.min(pEndBase2, pMidPivot2) : math.max(pEndBase2, pMidPivot2), "13", xloc.bar_index, yloc.price, #00000000, fib_tzlp, i_tzColor, size.normal, text.align_center, "")
+        f_drawLabelTZ(iMidPivot2 + referance * 21, i_fib_tzlp2 == "Bottom" ? math.min(pEndBase2, pMidPivot2) : math.max(pEndBase2, pMidPivot2), "21", xloc.bar_index, yloc.price, #00000000, fib_tzlp, i_tzColor, size.normal, text.align_center, "")
+        f_drawLabelTZ(iMidPivot2 + referance * 34, i_fib_tzlp2 == "Bottom" ? math.min(pEndBase2, pMidPivot2) : math.max(pEndBase2, pMidPivot2), "34", xloc.bar_index, yloc.price, #00000000, fib_tzlp, i_tzColor, size.normal, text.align_center, "")
+        f_drawLabelTZ(iMidPivot2 + referance * 55, i_fib_tzlp2 == "Bottom" ? math.min(pEndBase2, pMidPivot2) : math.max(pEndBase2, pMidPivot2), "55", xloc.bar_index, yloc.price, #00000000, fib_tzlp, i_tzColor, size.normal, text.align_center, "")
+        f_drawLabelTZ(iMidPivot2 + referance * 89, i_fib_tzlp2 == "Bottom" ? math.min(pEndBase2, pMidPivot2) : math.max(pEndBase2, pMidPivot2), "89", xloc.bar_index, yloc.price, #00000000, fib_tzlp, i_tzColor, size.normal, text.align_center, "")
+
+f_processLevelX(_show, _level, _color) =>
+    if FIB_Active and i_isFib
+        pPivotDiff = math.abs(pMidPivot - pEndBase)
+        price = 0.
+        if i_fibTool == "Extensions" or i_fibTool == "Extensions + Pivot Points"
+            f_drawLineX(iStartBase, pStartBase, iMidPivot, pMidPivot, xloc.bar_index, extend.none, color.gray, line.style_dashed, 1)
+            f_drawLineX(iMidPivot, pMidPivot, iEndBase, pEndBase, xloc.bar_index, extend.none, color.gray, line.style_dashed, 1)
+            offset = math.abs(pMidPivot - pStartBase)
+            price := pEndBase < pMidPivot ? pMidPivot - pPivotDiff + (i_reverse ? -1 : 1) * offset * _level : pMidPivot + pPivotDiff - (i_reverse ? -1 : 1) * offset * _level
+            if _show
+                f_drawLineX(iMidPivot, price, bar_index, price, xloc.bar_index, i_extendER ? extend.both : extend.right, _color, line.style_solid, 1)
+                if i_levels != "None"
+                    bar = i_levelsP == "Last Bar" ? bar_index : iMidPivot
+                    style = i_levelsP == "Last Bar" ? label.style_label_left : label.style_label_right
+                    size = i_levelsS == "Small" ? size.small : size.normal
+                    f_drawLabelX(bar, price, (i_levels == "Prices" ? "" : "EXT " + str.tostring(_level)) + (i_levels == "Levels + Prices" or i_levels == "Prices" ? " (" + str.tostring(price, format.mintick) + ")" : ""), xloc.bar_index, yloc.price, #00000000, style, _color, size, text.align_left, str.tostring(price, format.mintick))
+                if f_crossingLevel(close, price)
+                    alert("AutoFib Extension : " + syminfo.ticker + " crossing level " + str.tostring(_level))
+        if i_fibTool == "Retracements" or i_fibTool == "Retracements + Pivot Points"
+            f_drawLineX(iMidPivot, pMidPivot, iEndBase, pEndBase, xloc.bar_index, extend.none, color.gray, line.style_dashed, 1)
+            price := pEndBase < pMidPivot ? (i_reverse ? pEndBase : pMidPivot) - (i_reverse ? -1 : 1) * pPivotDiff * _level : (i_reverse ? pEndBase : pMidPivot) + (i_reverse ? -1 : 1) * pPivotDiff * _level
+            if _show
+                f_drawLineX(iMidPivot, price, bar_index, price, xloc.bar_index, i_extendER ? extend.both : extend.right, _color, line.style_solid, 1)
+                if i_levels != "None"
+                    bar = i_levelsP == "Last Bar" ? bar_index : iMidPivot
+                    style = i_levelsP == "Last Bar" ? label.style_label_left : label.style_label_right
+                    size = i_levelsS == "Small" ? size.small : size.normal
+                    f_drawLabelX(bar, price, (i_levels == "Prices" ? "" : "RET " + str.tostring(_level)) + (i_levels == "Levels + Prices" or i_levels == "Prices" ? " (" + str.tostring(price, format.mintick) + ")" : ""), xloc.bar_index, yloc.price, #00000000, style, _color, size, text.align_left, str.tostring(price, format.mintick))
+                if f_crossingLevel(close, price)
+                    alert("AutoFib Retracment : " + syminfo.ticker + " crossing level " + str.tostring(_level))
+        if i_fibTool == "Pivot Points" or i_fibTool == "Extensions + Pivot Points" or i_fibTool == "Retracements + Pivot Points"
+            pivot = math.avg(htf_h1, htf_l1, htf_c1)
+            range_2 = htf_h1 - htf_l1
+            if not i_histPP
+                f_drawLinePVT(time_x10, pivot, time_x21, pivot, xloc.bar_time, extend.none, color.gray, line.style_dashed, 1)
+            if _show and _level >= 0
+                pvtPoints = _level == 0 or _level == 0.382 or _level == 0.618 or _level == 1
+                f_drawLinePVT(time_x11, pivot - range_2 * _level, time_x21, pivot - range_2 * _level, xloc.bar_time, extend.none, i_relevant ? close < pivot ? _color : na : _color, pvtPoints ? line.style_solid : line.style_dashed, pvtPoints ? 2 : 1)
+                f_drawLinePVT(time_x11, pivot + range_2 * _level, time_x21, pivot + range_2 * _level, xloc.bar_time, extend.none, i_relevant ? close > pivot ? _color : na : _color, pvtPoints ? line.style_solid : line.style_dashed, pvtPoints ? 2 : 1)
+                if i_extend
+                    style = i_extendL == "Solid" ? line.style_solid : i_extendL == "Dotted" ? line.style_dotted : line.style_dashed
+                    f_drawLinePVT(time_x11, pivot - range_2 * _level, time_x21, pivot - range_2 * _level, xloc.bar_time, extend.both, i_relevant ? close < pivot ? _color : na : _color, style, 1)
+                    f_drawLinePVT(time_x11, pivot + range_2 * _level, time_x21, pivot + range_2 * _level, xloc.bar_time, extend.both, i_relevant ? close > pivot ? _color : na : _color, style, 1)
+                if i_levelsPvt != "None"
+                    time_xx = i_levelsPvtP == "Last Bar" ? timenow : time_x21
+                    size = i_levelsPvtS == "Small" ? size.small : size.normal
+                    if pvtPoints
+                        if _level == 0
+                            f_drawLabelPVT(time_xx, pivot, (i_levelsPvt == "Prices" ? "" : "PP") + (i_levelsPvt == "Levels + Prices" or i_levelsPvt == "Prices" ? " (" + str.tostring(pivot, format.mintick) + ")" : ""), xloc.bar_time, yloc.price, #00000000, label.style_label_left, _color, size, text.align_left, str.tostring(pivot, format.mintick))
+                        else
+                            f_drawLabelPVT(time_xx, pivot - range_2 * _level, (i_levelsPvt == "Prices" ? "" : (_level == 0.382 ? "S1 PP " : _level == 0.618 ? "S2 PP " : "S3 PP ") + str.tostring(_level)) + (i_levelsPvt == "Levels + Prices" or i_levelsPvt == "Prices" ? " (" + str.tostring(pivot - range_2 * _level, format.mintick) + ")" : ""), xloc.bar_time, yloc.price, #00000000, label.style_label_left, i_relevant ? close < pivot ? _color : na : _color, size, text.align_left, str.tostring(pivot - range_2 * _level, format.mintick))
+                            f_drawLabelPVT(time_xx, pivot + range_2 * _level, (i_levelsPvt == "Prices" ? "" : (_level == 0.382 ? "R1 PP " : _level == 0.618 ? "R2 PP " : "R3 PP ") + str.tostring(_level)) + (i_levelsPvt == "Levels + Prices" or i_levelsPvt == "Prices" ? " (" + str.tostring(pivot + range_2 * _level, format.mintick) + ")" : ""), xloc.bar_time, yloc.price, #00000000, label.style_label_left, i_relevant ? close > pivot ? _color : na : _color, size, text.align_left, str.tostring(pivot + range_2 * _level, format.mintick))
+                    else
+                        f_drawLabelPVT(time_xx, pivot - range_2 * _level, (i_levelsPvt == "Prices" ? "" : "   PP " + str.tostring(_level)) + (i_levelsPvt == "Levels + Prices" or i_levelsPvt == "Prices" ? " (" + str.tostring(pivot - range_2 * _level, format.mintick) + ")" : ""), xloc.bar_time, yloc.price, #00000000, label.style_label_left, i_relevant ? close < pivot ? _color : na : _color, size, text.align_left, str.tostring(pivot - range_2 * _level, format.mintick))
+                        f_drawLabelPVT(time_xx, pivot + range_2 * _level, (i_levelsPvt == "Prices" ? "" : "   PP " + str.tostring(_level)) + (i_levelsPvt == "Levels + Prices" or i_levelsPvt == "Prices" ? " (" + str.tostring(pivot + range_2 * _level, format.mintick) + ")" : ""), xloc.bar_time, yloc.price, #00000000, label.style_label_left, i_relevant ? close > pivot ? _color : na : _color, size, text.align_left, str.tostring(pivot + range_2 * _level, format.mintick))
+                if f_crossingLevel(close, pivot - range_2 * _level)
+                    alert("AutoFib PivotPoints : " + syminfo.ticker + " crossing support level " + str.tostring(_level))
+                if f_crossingLevel(close, pivot + range_2 * _level)
+                    alert("AutoFib PivotPoints : " + syminfo.ticker + " crossing resistance level " + str.tostring(_level))
+
+// --- Fibonacci Levels ---
+group_fib_levels = "FIBs · Fibonacci Levels"
+show_0 = input.bool(true, "", inline="Level0", group=group_fib_levels)
+value_0 = input.float(0., "", inline="Level0", group=group_fib_levels, display=display)
+color_0 = input.color(#787b86, "", inline="Level0", group=group_fib_levels)
+f_processLevelX(show_0, value_0, color_0)
+
+show_0_236 = input.bool(true, "", inline="Level0", group=group_fib_levels)
+value_0_236 = input.float(0.236, "", inline="Level0", group=group_fib_levels, display=display)
+color_0_236 = input.color(#f44336, "", inline="Level0", group=group_fib_levels)
+f_processLevelX(show_0_236, value_0_236, color_0_236)
+
+show_0_382 = input.bool(true, "", inline="Level1", group=group_fib_levels)
+value_0_382 = input.float(0.382, "", inline="Level1", group=group_fib_levels, display=display)
+color_0_382 = input.color(#81c784, "", inline="Level1", group=group_fib_levels)
+f_processLevelX(show_0_382, value_0_382, color_0_382)
+
+show_0_5 = input.bool(true, "", inline="Level1", group=group_fib_levels)
+value_0_5 = input.float(0.5, "", inline="Level1", group=group_fib_levels, display=display)
+color_0_5 = input.color(#4caf50, "", inline="Level1", group=group_fib_levels)
+f_processLevelX(show_0_5, value_0_5, color_0_5)
+
+show_0_618 = input.bool(true, "", inline="Level2", group=group_fib_levels)
+value_0_618 = input.float(0.618, "", inline="Level2", group=group_fib_levels, display=display)
+color_0_618 = input.color(#009688, "", inline="Level2", group=group_fib_levels)
+f_processLevelX(show_0_618, value_0_618, color_0_618)
+
+show_0_65 = input.bool(false, "", inline="Level2", group=group_fib_levels)
+value_0_65 = input.float(0.65, "", inline="Level2", group=group_fib_levels, display=display)
+color_0_65 = input.color(#009688, "", inline="Level2", group=group_fib_levels)
+f_processLevelX(show_0_65, value_0_65, color_0_65)
+
+show_0_786 = input.bool(true, "", inline="Level3", group=group_fib_levels)
+value_0_786 = input.float(0.786, "", inline="Level3", group=group_fib_levels, display=display)
+color_0_786 = input.color(#64b5f6, "", inline="Level3", group=group_fib_levels)
+f_processLevelX(show_0_786, value_0_786, color_0_786)
+
+show_1 = input.bool(true, "", inline="Level3", group=group_fib_levels)
+value_1 = input.float(1., "", inline="Level3", group=group_fib_levels, display=display)
+color_1 = input.color(#787b86, "", inline="Level3", group=group_fib_levels)
+f_processLevelX(show_1, value_1, color_1)
+
+show_1_272 = input.bool(false, "", inline="Level4", group=group_fib_levels)
+value_1_272 = input.float(1.272, "", inline="Level4", group=group_fib_levels, display=display)
+color_1_272 = input.color(#81c784, "", inline="Level4", group=group_fib_levels)
+f_processLevelX(show_1_272, value_1_272, color_1_272)
+
+show_1_414 = input.bool(false, "", inline="Level4", group=group_fib_levels)
+value_1_414 = input.float(1.414, "", inline="Level4", group=group_fib_levels, display=display)
+color_1_414 = input.color(#f44336, "", inline="Level4", group=group_fib_levels)
+f_processLevelX(show_1_414, value_1_414, color_1_414)
+
+show_1_618 = input.bool(true, "", inline="Level5", group=group_fib_levels)
+value_1_618 = input.float(1.618, "", inline="Level5", group=group_fib_levels, display=display)
+color_1_618 = input.color(#2196f3, "", inline="Level5", group=group_fib_levels)
+f_processLevelX(show_1_618, value_1_618, color_1_618)
+
+show_1_65 = input.bool(false, "", inline="Level5", group=group_fib_levels)
+value_1_65 = input.float(1.65, "", inline="Level5", group=group_fib_levels, display=display)
+color_1_65 = input.color(#2196f3, "", inline="Level5", group=group_fib_levels)
+f_processLevelX(show_1_65, value_1_65, color_1_65)
+
+show_2_618 = input.bool(false, "", inline="Level6", group=group_fib_levels)
+value_2_618 = input.float(2.618, "", inline="Level6", group=group_fib_levels, display=display)
+color_2_618 = input.color(#f44336, "", inline="Level6", group=group_fib_levels)
+f_processLevelX(show_2_618, value_2_618, color_2_618)
+
+show_2_65 = input.bool(false, "", inline="Level6", group=group_fib_levels)
+value_2_65 = input.float(2.65, "", inline="Level6", group=group_fib_levels, display=display)
+color_2_65 = input.color(#f44336, "", inline="Level6", group=group_fib_levels)
+f_processLevelX(show_2_65, value_2_65, color_2_65)
+
+show_3_618 = input.bool(false, "", inline="Level7", group=group_fib_levels)
+value_3_618 = input.float(3.618, "", inline="Level7", group=group_fib_levels, display=display)
+color_3_618 = input.color(#9c27b0, "", inline="Level7", group=group_fib_levels)
+f_processLevelX(show_3_618, value_3_618, color_3_618)
+
+show_3_65 = input.bool(false, "", inline="Level7", group=group_fib_levels)
+value_3_65 = input.float(3.65, "", inline="Level7", group=group_fib_levels, display=display)
+color_3_65 = input.color(#9c27b0, "", inline="Level7", group=group_fib_levels)
+f_processLevelX(show_3_65, value_3_65, color_3_65)
+
+show_4_236 = input.bool(false, "", inline="Level8", group=group_fib_levels)
+value_4_236 = input.float(4.236, "", inline="Level8", group=group_fib_levels, display=display)
+color_4_236 = input.color(#e91e63, "", inline="Level8", group=group_fib_levels)
+f_processLevelX(show_4_236, value_4_236, color_4_236)
+
+show_4_618 = input.bool(false, "", inline="Level8", group=group_fib_levels)
+value_4_618 = input.float(4.618, "", inline="Level8", group=group_fib_levels, display=display)
+color_4_618 = input.color(#81c784, "", inline="Level8", group=group_fib_levels)
+f_processLevelX(show_4_618, value_4_618, color_4_618)
+
+show_neg_0_236 = input.bool(false, "", inline="Level9", group=group_fib_levels)
+value_neg_0_236 = input.float(-0.236, "", inline="Level9", group=group_fib_levels, display=display)
+color_neg_0_236 = input.color(#f44336, "", inline="Level9", group=group_fib_levels)
+f_processLevelX(show_neg_0_236, value_neg_0_236, color_neg_0_236)
+
+show_neg_0_382 = input.bool(false, "", inline="Level9", group=group_fib_levels)
+value_neg_0_382 = input.float(-0.382, "", inline="Level9", group=group_fib_levels, display=display)
+color_neg_0_382 = input.color(#81c784, "", inline="Level9", group=group_fib_levels)
+f_processLevelX(show_neg_0_382, value_neg_0_382, color_neg_0_382)
+
+show_neg_0_618 = input.bool(true, "", inline="Level10", group=group_fib_levels)
+value_neg_0_618 = input.float(-0.618, "", inline="Level10", group=group_fib_levels, display=display)
+color_neg_0_618 = input.color(#009688, "", inline="Level10", group=group_fib_levels)
+f_processLevelX(show_neg_0_618, value_neg_0_618, color_neg_0_618)
+
+show_neg_0_65 = input.bool(false, "", inline="Level10", group=group_fib_levels)
+value_neg_0_65 = input.float(-0.65, "", inline="Level10", group=group_fib_levels, display=display)
+color_neg_0_65 = input.color(#009688, "", inline="Level10", group=group_fib_levels)
+f_processLevelX(show_neg_0_65, value_neg_0_65, color_neg_0_65)
+
+i_histPP := i_histPP and (i_fibTool == "Pivot Points" or i_fibTool == "Extensions + Pivot Points" or i_fibTool == "Retracements + Pivot Points")
+
+// ========== Historical Pivot Points（精简版，仅保留核心水平，避免超过 64 plot 限制）==========
+plot(FIB_Active and i_histPP and show_0 ? math.avg(htf_h1, htf_l1, htf_c1) : na, 
+     "PP", bool(ta.change(time(htf))) ? na : color_0, editable=false, display=display)
+
+plot(FIB_Active and i_histPP and show_0_382 ? math.avg(htf_h1, htf_l1, htf_c1) - (htf_h1 - htf_l1) * value_0_382 : na, 
+     "PP 0.382 S", bool(ta.change(time(htf))) ? na : color_0_382, editable=false, display=display)
+plot(FIB_Active and i_histPP and show_0_382 ? math.avg(htf_h1, htf_l1, htf_c1) + (htf_h1 - htf_l1) * value_0_382 : na, 
+     "PP 0.382 R", bool(ta.change(time(htf))) ? na : color_0_382, editable=false, display=display)
+
+plot(FIB_Active and i_histPP and show_0_618 ? math.avg(htf_h1, htf_l1, htf_c1) - (htf_h1 - htf_l1) * value_0_618 : na, 
+     "PP 0.618 S", bool(ta.change(time(htf))) ? na : color_0_618, editable=false, display=display)
+plot(FIB_Active and i_histPP and show_0_618 ? math.avg(htf_h1, htf_l1, htf_c1) + (htf_h1 - htf_l1) * value_0_618 : na, 
+     "PP 0.618 R", bool(ta.change(time(htf))) ? na : color_0_618, editable=false, display=display)
+
+plot(FIB_Active and i_histPP and show_1 ? math.avg(htf_h1, htf_l1, htf_c1) - (htf_h1 - htf_l1) * value_1 : na, 
+     "PP 1.0 S", bool(ta.change(time(htf))) ? na : color_1, editable=false, display=display)
+plot(FIB_Active and i_histPP and show_1 ? math.avg(htf_h1, htf_l1, htf_c1) + (htf_h1 - htf_l1) * value_1 : na, 
+     "PP 1.0 R", bool(ta.change(time(htf))) ? na : color_1, editable=false, display=display)
+
+// ==================================================================================
+// 八、Volatility & Volume AddOns（原指标1）
+// ==================================================================================
+group_vol_vol = "FIBs · Volatility AddOns"
+tooltip_high_volatility =
+     "High Volatility Detection\n\n" +
+     "Identifies bars where price expansion is unusually large relative to recent volatility.\n\n" +
+     "A high-volatility bar is detected when:\n" +
+     "• Current bar range > (ATR × Multiplier)\n\n" +
+     "Such conditions often accompany breakouts, news-driven moves, or volatility regime shifts."
+i_hATRLb = input.bool(true, "⚡ High Volatility Detection", group=group_vol_vol, tooltip=tooltip_high_volatility)
+i_weightedATR = ta.atr(input.int(13, "  ATR Length", inline="ATR", group=group_vol_vol, display=display)) * input.float(2.718, "Multiplier", minval=.1, step=.1, inline="ATR", group=group_vol_vol, display=display)
+
+group_vol = "FIBs · Volume AddOns"
+i_vSMA = ta.sma(nz(volume), input.int(89, "Volume Moving Average Length", group=group_vol, display=display))
+tooltip_volume_spike_sign_of_exhaustion =
+     "Volume Spike · Potential Exhaustion\n\n" +
+     "Highlights moments where volume expands significantly relative to its moving average.\n\n" +
+     "A spike is detected when:\n" +
+     "• Current volume > (Volume MA × Threshold)\n\n" +
+     "These events often occur near climactic moves, exhaustion points, or strong participation surges."
+i_vSpikeLb = input.bool(true, "🚦 Volume Spike · Potential Exhaustion", group=group_vol, tooltip=tooltip_volume_spike_sign_of_exhaustion)
+i_vSpikeThresh = input.float(4.669, "  Volume Spike Threshold", minval=.1, step=.1, group=group_vol, display=display)
+tooltip_volume_weighted_colored_bars =
+     "Volume-Weighted Colored Bars\n\n" +
+     "Colors price bars based on relative volume intensity.\n\n" +
+     "Bar colors indicate:\n" +
+     "• High participation (above average volume)\n" +
+     "• Normal participation\n" +
+     "• Low participation (below average volume)\n\n" +
+     "Helps visually confirm momentum, conviction, and participation behind price movement."
+i_vwcb = input.bool(true, "Volume-Weighted Colored Bars", group=group_vol, tooltip=tooltip_volume_weighted_colored_bars)
+i_vwcbHighThresh = input.float(1.618, "  Volume Threshold: High", minval=1., step=.1, inline="VWC", group=group_vol, display=display)
+i_vwcbLowThresh = input.float(0.618, "Low", minval=.1, step=.1, inline="VWC", group=group_vol, display=display)
+
+nzVolume = nz(volume)
+bullCandle = close > open
+bearCandle = close < open
+range_1 = math.abs(high - low)
+exhaustVol = nzVolume > i_vSpikeThresh * i_vSMA
+plotchar(FIB_Active and i_vSpikeLb and bool(nzVolume) ? exhaustVol : false, "Exhaustion Bar", "🚦", location.abovebar, size=size.tiny, editable=false, display=display)
+alertcondition(ta.crossover(nzVolume, i_vSMA * i_vSpikeThresh), "Volume Spikes", "sign of exhaustion, huge volume increase detected\n{{exchange}}:{{ticker}}->\nOpen = {{open}}, Current = {{close}},\nTime = {{time}}")
+
+highVolatility = range_1 > i_weightedATR
+plotchar(FIB_Active and i_hATRLb ? highVolatility : false, "High Volatile Bar", "⚡", location.belowbar, size=size.tiny, editable=false, display=display)
+alertcondition(ta.crossover(range_1, i_weightedATR), "High Volatility", "high volatility detected\n{{exchange}}:{{ticker}}->\nOpen = {{open}}, Current = {{close}},\nTime = {{time}}")
+
+vwcbCol = nzVolume > i_vSMA * i_vwcbHighThresh ? bullCandle ? #006400 : #910000 : nzVolume < i_vSMA * i_vwcbLowThresh ? bearCandle ? #FF9800 : #7FFFD4 : na
+barcolor(FIB_Active and i_vwcb and bool(nzVolume) ? vwcbCol : na, title="Volume Weighted Colored Bars", editable=false)
+
+// ==================================================================================
+// Logo
+// ==================================================================================
+var table logo = table.new(position.bottom_right, 1, 1)
+table.cell(logo, 0, 0, "☼☾  ", text_size=size.normal, text_color=color.teal)
